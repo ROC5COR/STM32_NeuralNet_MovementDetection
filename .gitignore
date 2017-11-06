@@ -36,6 +36,7 @@
 *.x86_64
 *.hex
 
+
 # Debug files
 *.dSYM/
 *.su
@@ -50,3 +51,10 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+#STM32 Compilation
+*.list
+*.mk
+
+#Others
+*.DS_Store
