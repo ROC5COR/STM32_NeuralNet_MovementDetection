@@ -44,11 +44,13 @@
 #include <time.h>
 #include "ai_tools.h"
 #include "ai_data.h"
+#include "adxl345.h"
 
 #define SAMPLE_SIZE 102
 #define HIDDEN_NEURON 30
 #define TRAINING_
 #define TESTING
+#define ACCELERO
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -375,6 +377,27 @@ int main(void)
 	  printf("EndTime : \t%ld\n",endTime);
 	  freeTrainingSoloMatrix();
 #endif
+
+
+#ifdef ACCELERO
+	  ADXL345_Init(&hi2c1);
+	  HAL_Delay(10);
+	  printf("Device ID : 0x%02x\n", getDeviceID(&hi2c1));
+	  HAL_Delay(10);
+	  setDataFormatControl(&hi2c1,0x0B);
+	  HAL_Delay(10);
+	  setDataRate(&hi2c1,ADXL345_3200HZ);
+	  HAL_Delay(10);
+	  setPowerControl(&hi2c1,MeasurementMode);
+	  HAL_Delay(10);
+	  int16_t i2c_data[3] = {0, 0, 0};
+
+	  //getOutput(&hi2c1,i2c_data);
+	  //printf("d2x/dt : %d, d2y/dt : %d, d2z/dt : %d\n",i2c_data[0],i2c_data[1],i2c_data[2]);
+
+#endif
+
+
 #ifdef TESTING
 #ifndef TRAINING
     printf("Loading data of synapses\n");
@@ -401,9 +424,9 @@ int main(void)
 	  performComputation();
 	  printMatrix(l2,(char*)"Results 3 : ");
 
-    fill_matrix_input_4();
-    performComputation();
-    printMatrix(l2,(char*)"Results 4 : ");
+	  fill_matrix_input_4();
+	  performComputation();
+	  printMatrix(l2,(char*)"Results 4 : ");
 
 	  freeTestingMatrix();
 
@@ -489,7 +512,7 @@ static void MX_I2C1_Init(void)
 {
 
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x20303E5D;
+  hi2c1.Init.Timing = 0x2010091A;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
