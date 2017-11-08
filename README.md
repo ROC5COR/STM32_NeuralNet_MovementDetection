@@ -2,7 +2,7 @@
 Innovative project over neural networks and embedded systems
 
 # Overview
-This project aims at creating a Neural Network for STM32(L476RG) to detect movements from accelerometer data. The neural net used is a multilayer perceptron with 3 layers. 
+This project aims at creating a Neural Network for STM32(L476RG) to do motion recognition with data from accelerometer. The neural net used is a multilayer perceptron and it has (currently) 3 layers. 
 
 # Requirements
 * STM32CubeMX : to edit project configuration (clock, gpios...)
