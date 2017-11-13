@@ -136,6 +136,7 @@ float outputs[SAMPLE_SIZE][4];
 
 
 
+
 void initTestingMatrix(){
     input = createMatrix_float(1,20);
     l1 = createMatrix_float(1,HIDDEN_NEURON);
