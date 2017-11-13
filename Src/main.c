@@ -51,6 +51,7 @@
 #define TRAINING_
 #define TESTING
 #define ACCELERO
+#define LOUKA
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -132,6 +133,9 @@ MAT *output;
 float inputs[SAMPLE_SIZE][20];
 float outputs[SAMPLE_SIZE][4];
 #endif
+
+
+
 void initTestingMatrix(){
     input = createMatrix_float(1,20);
     l1 = createMatrix_float(1,HIDDEN_NEURON);
@@ -345,7 +349,7 @@ int main(void)
   /* USER CODE BEGIN 3 */
 	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 
-	  printf("Init (limit:[%d,%d]); SystemCoreClock:[%ldMHz]\n",MIN_VALUE,MAX_VALUE, SystemCoreClock/1000000);
+	  printf("Init (limit:[%d,%d]); SystemCoreClock:[%ldMHz]; Sizeof VAR:[%d]\n",MIN_VALUE,MAX_VALUE, SystemCoreClock/1000000,sizeof(VAR));
 
 	  srand(time(NULL));
 
@@ -353,6 +357,20 @@ int main(void)
 	  syn2 = createMatrix_float(HIDDEN_NEURON,4);
 
 	  uint32_t endTime, startTime = HAL_GetTick();
+
+#ifdef LOUKA
+	  MAT *loukaInput = createMatrix_float(1,3);
+	  ((float**)loukaInput->mat)[0][0] = 0.210;
+	  ((float**)loukaInput->mat)[0][1] = 0.962;
+	  ((float**)loukaInput->mat)[0][2] = 0.674;
+	  MAT *loukaLayer = createMatrix_float(3,1);
+	  ((float**)loukaLayer->mat)[0][0] = 5.458;
+	  ((float**)loukaLayer->mat)[1][0] = -0.325;
+	  ((float**)loukaLayer->mat)[2][0] = 3.147;
+	  MAT *loukaOut = createMatrix_float(1,1);
+	  matrixProduct_float(loukaInput,loukaLayer,loukaOut);
+	  printMatrix(loukaOut,(char*)"LOUKA : ");
+#endif
 
 #ifdef TRAINING
 	  fillRandomValuesFloat(syn1,-1,1);
@@ -391,9 +409,11 @@ int main(void)
 	  setPowerControl(&hi2c1,MeasurementMode);
 	  HAL_Delay(10);
 	  int16_t i2c_data[3] = {0, 0, 0};
+	  uint32_t i2c_startTime = HAL_GetTick();
+	  i2c_startTime = HAL_GetTick();
+	  getOutput(&hi2c1,i2c_data);
+	  printf("d2x/dt : %d, d2y/dt : %d, d2z/dt : %d, delay : %ld\n",i2c_data[0],i2c_data[1],i2c_data[2],HAL_GetTick() - i2c_startTime);
 
-	  //getOutput(&hi2c1,i2c_data);
-	  //printf("d2x/dt : %d, d2y/dt : %d, d2z/dt : %d\n",i2c_data[0],i2c_data[1],i2c_data[2]);
 
 #endif
 
@@ -546,7 +566,7 @@ static void MX_USART2_UART_Init(void)
 {
 
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 9600;
+  huart2.Init.BaudRate = 115200;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
