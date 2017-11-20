@@ -51,7 +51,7 @@
 #define TRAINING_
 #define TESTING
 #define ACCELERO
-#define LOUKA
+#define LOUKA_
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
