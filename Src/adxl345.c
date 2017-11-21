@@ -113,9 +113,9 @@ void getOutput(I2C_HandleTypeDef *handle, int16_t* readings){
     //readings[1] = (int16_t)buffer[3] << 8 | (int16_t)buffer[2];
     //readings[2] = (int16_t)buffer[5] << 8 | (int16_t)buffer[4];
     //printf("raw data : %d\t%d\t%d\t%d\t%d\t%d\n",buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5]);
-    readings[0] = ~((int16_t)buffer[1] << 8 | (int16_t)buffer[0]);
-    readings[1] = ~((int16_t)buffer[3] << 8 | (int16_t)buffer[2]);
-    readings[2] = ~((int16_t)buffer[5] << 8 | (int16_t)buffer[4]);
+    readings[0] = ((int16_t)buffer[1] << 8 | (int16_t)buffer[0]);
+    readings[1] = ((int16_t)buffer[3] << 8 | (int16_t)buffer[2]);
+    readings[2] = ((int16_t)buffer[5] << 8 | (int16_t)buffer[4]);
 }
 
 

@@ -354,3 +354,12 @@ void matrixMultiply(MAT *mat1, MAT *mat2, MAT *matOut){
     }
 }
 
+void filterAcc(MAT *mat1, MAT *matOut){
+	if(mat1->matM != matOut->matM || mat1->matM != matOut->matM)
+	    {
+	        printf("Error in filter : bad dimension\n");
+	        return;
+	    }
+
+}
+
