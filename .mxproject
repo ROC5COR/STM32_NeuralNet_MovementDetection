@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=/Users/roc5/Desktop/Projet innovation/AI_Implementation_STM32/AI_Implementation/Inc
+HeaderPath=/Users/roc5/Desktop/Projet innovation/AI_Implementation_STM32/STM32_NeuralNet_MovementDetection/Inc
 HeaderFiles=stm32l4xx_it.h;stm32l4xx_hal_conf.h;main.h;
-SourcePath=/Users/roc5/Desktop/Projet innovation/AI_Implementation_STM32/AI_Implementation/Src
+SourcePath=/Users/roc5/Desktop/Projet innovation/AI_Implementation_STM32/STM32_NeuralNet_MovementDetection/Src
 SourceFiles=stm32l4xx_it.h;stm32l4xx_hal_conf.h;main.h;stm32l4xx_it.c;stm32l4xx_hal_msp.c;main.c;
 
 [PreviousLibFiles]
