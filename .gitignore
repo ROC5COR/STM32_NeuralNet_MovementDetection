@@ -58,3 +58,5 @@ dkms.conf
 
 #Others
 *.DS_Store
+
+Debug/
