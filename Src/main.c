@@ -50,11 +50,13 @@
 
 #define ACCELERO_I2C hi2c3
 #define SAMPLE_SIZE 102
+#define INPUT_SIZE 15
 #define HIDDEN_NEURON 30
 #define TRAINING_
-#define TESTING
+#define TESTING_
 #define ACCELERO
 #define LOUKA_
+#define ALEX
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -109,6 +111,7 @@ MAT *l2;
 MAT *syn1;
 MAT *syn2;
 MAT *input;
+MAT *input_pre_filter;
 
 MAT *l1_complete;
 MAT *l2_complete;
@@ -141,10 +144,11 @@ float outputs[SAMPLE_SIZE][4];
 
 
 void initTestingMatrix(){
-    input = createMatrix_float(1,20);
+input = createMatrix_float(1,INPUT_SIZE*2);
+input_pre_filter = createMatrix_float(1,INPUT_SIZE*2);
     l1 = createMatrix_float(1,HIDDEN_NEURON);
     l2 = createMatrix_float(1,4);
-    output = createMatrix_float(1,4);
+    output = createMatrix_float(1,INPUT_SIZE*2);
 }
 void freeTestingMatrix(){
     free(input);
@@ -361,6 +365,7 @@ int main(void)
   GPIO_InitTypeDef GPIO_InitStruct;
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   //LED
   GPIO_InitStruct.Pin = GPIO_PIN_5;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -374,7 +379,12 @@ int main(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);*/
 
-
+  	  //button
+  GPIO_InitStruct.Pin = GPIO_PIN_13;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
 
   //HAL_RCC_MCOConfig(RCC_MCO, RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_16);
@@ -397,7 +407,7 @@ int main(void)
 	  syn1 = createMatrix_float(20,HIDDEN_NEURON);
 	  syn2 = createMatrix_float(HIDDEN_NEURON,4);
 
-	  uint32_t endTime, startTime = HAL_GetTick();
+	 // uint32_t endTime, startTime = HAL_GetTick();
 
 #ifdef LOUKA
 	  MAT *loukaInput = createMatrix_float(1,3);
@@ -439,6 +449,8 @@ int main(void)
 
 
 #ifdef ACCELERO
+
+	  initTestingMatrix();
 	  ADXL345_Init(&ACCELERO_I2C);
 	  HAL_Delay(10);
 	  printf("Device ID : 0x%02x\n", getDeviceID(&ACCELERO_I2C));
@@ -449,11 +461,6 @@ int main(void)
 	  HAL_Delay(10);
 	  setPowerControl(&ACCELERO_I2C,MeasurementMode);
 	  HAL_Delay(10);
-	  int16_t i2c_data[3] = {0, 0, 0};
-	  uint32_t i2c_startTime = HAL_GetTick();
-	  i2c_startTime = HAL_GetTick();
-	  getOutput(&ACCELERO_I2C,i2c_data);
-	  printf("d2x/dt : %d, d2y/dt : %d, d2z/dt : %d, delay : %ld\n",i2c_data[0],i2c_data[1],i2c_data[2],HAL_GetTick() - i2c_startTime);
 
 
 #endif
@@ -502,7 +509,11 @@ int main(void)
 	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 while (1)
  {
+	if (HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_13) == GPIO_PIN_RESET){
 
+	  filter_acc();
+
+	}
   }
   /* USER CODE END 3 */
 
@@ -642,8 +653,76 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
 }
+// User Code
+void filter_acc(){
+	  printf("Start\n");
+	  //uint32_t i2c_startTime = HAL_GetTick();
+	 // i2c_startTime = HAL_GetTick();
+	  int i = 0;
+	  int j = 0;
+	  int16_t i2c_data[3] = {0, 0,0};
+	  int16_t i2c_data_temp[3] ={0,0,0};
+	  int16_t i2c_data_filter[1][INPUT_SIZE*2];
+	  int16_t i2c_data_pre_filter[1][INPUT_SIZE*2];
+	  int16_t i2c_data_output[1][INPUT_SIZE*2];
+	  while(i<INPUT_SIZE){
+		  while (j<10){
+			  getOutput(&ACCELERO_I2C,i2c_data);
+			  i2c_data_temp[0]+=i2c_data[0];
+			  i2c_data_temp[1]+=i2c_data[1];
+			  j++;
 
-/* USER CODE BEGIN 4 */
+		  }
+
+		  i2c_data_filter[0][2*i] = i2c_data_temp[0]/10.0;
+		  i2c_data_filter[0][1+2*i] = i2c_data_temp[1]/10.0;
+
+		  //printf("X:%d, Y:%d\n",i2c_data_filter[0][2*i],i2c_data_filter[0][1+2*i]);
+		  //((float**)input->mat)[0][2+3*i] =  ((float**)input->mat)[0][2+3*i]/10;
+		  i++;
+		  j=0;
+		  i2c_data_temp[0]=0;
+		  i2c_data_temp[1]=0;
+		  HAL_Delay(100);
+
+	  }
+	   // printf("Fin acquisition\n");
+	   // printf("delai : %u\n",HAL_GetTick() - i2c_startTime);
+	  //printMatrix(input_pre_filter,(char*)"pre_filtre");
+		i2c_data_pre_filter[0][0]=i2c_data_filter[0][0];
+		i2c_data_pre_filter[0][1]=i2c_data_filter[0][1];
+		i2c_data_output[0][0]=i2c_data_filter[0][0];
+		i2c_data_output[0][1]=i2c_data_filter[0][1];
+
+		//printf("suppression offset\n");
+		((float**)input->mat)[0][0]=i2c_data_output[0][0];
+		((float**)input->mat)[0][1]=i2c_data_output[0][1];
+
+		printf("Data\n");
+		printf("%f\n",((float**)input->mat)[0][0]);
+		printf("%f\n",((float**)input->mat)[0][1]);
+
+		for(i=1;i<INPUT_SIZE;i++){
+
+		  i2c_data_pre_filter[0][2*i]=i2c_data_filter[0][2*i]*0.1+i2c_data_pre_filter[0][2*(i-1)]*0.9;
+		  i2c_data_pre_filter[0][1+2*i]=i2c_data_filter[0][1+2*i]*0.1+i2c_data_pre_filter[0][1+2*(i-1)]*0.9;
+
+		  i2c_data_output[0][2*i]=i2c_data_filter[0][2*i]-i2c_data_pre_filter[0][2*i];
+		  i2c_data_output[0][1+2*i]=i2c_data_filter[0][1+2*i]-i2c_data_pre_filter[0][1+2*i];
+
+		  ((float**)input->mat)[0][2*i]=i2c_data_output[0][2*i];
+		  ((float**)input->mat)[0][2*i+1]=i2c_data_output[0][1+2*i];
+
+		  printf("Data\n");
+		  printf("%f\n",((float**)input->mat)[0][2*i]);
+		  printf("%f\n",((float**)input->mat)[0][1+2*i]);
+
+
+	  }
+
+}
+
+
 void fill_matrix_syn1(){
 ((float**)syn1->mat)[0][0]=-0.053583;((float**)syn1->mat)[0][1]=0.597654;((float**)syn1->mat)[0][2]=-4.098351;((float**)syn1->mat)[0][3]=-0.705224;((float**)syn1->mat)[0][4]=2.489956;((float**)syn1->mat)[0][5]=-1.187021;((float**)syn1->mat)[0][6]=-5.766134;((float**)syn1->mat)[0][7]=-5.902740;((float**)syn1->mat)[0][8]=0.221328;((float**)syn1->mat)[0][9]=1.007022;((float**)syn1->mat)[0][10]=2.946260;((float**)syn1->mat)[0][11]=0.287398;((float**)syn1->mat)[0][12]=-1.348502;((float**)syn1->mat)[0][13]=1.090468;((float**)syn1->mat)[0][14]=-3.594762;((float**)syn1->mat)[0][15]=0.847378;((float**)syn1->mat)[0][16]=1.231352;((float**)syn1->mat)[0][17]=3.277472;((float**)syn1->mat)[0][18]=-2.083746;((float**)syn1->mat)[0][19]=-0.283242;((float**)syn1->mat)[0][20]=3.544383;((float**)syn1->mat)[0][21]=1.969509;((float**)syn1->mat)[0][22]=-3.117229;((float**)syn1->mat)[0][23]=-2.627328;((float**)syn1->mat)[0][24]=2.480145;((float**)syn1->mat)[0][25]=-1.732370;((float**)syn1->mat)[0][26]=0.640900;((float**)syn1->mat)[0][27]=1.047184;((float**)syn1->mat)[0][28]=6.082130;((float**)syn1->mat)[0][29]=1.092062;((float**)syn1->mat)[1][0]=-1.312017;((float**)syn1->mat)[1][1]=-1.069656;((float**)syn1->mat)[1][2]=-2.506498;((float**)syn1->mat)[1][3]=-2.078658;((float**)syn1->mat)[1][4]=-1.657352;((float**)syn1->mat)[1][5]=0.795636;((float**)syn1->mat)[1][6]=-1.020044;((float**)syn1->mat)[1][7]=-3.172391;((float**)syn1->mat)[1][8]=-1.700308;((float**)syn1->mat)[1][9]=-0.003799;((float**)syn1->mat)[1][10]=1.902096;((float**)syn1->mat)[1][11]=2.880908;((float**)syn1->mat)[1][12]=-2.666473;((float**)syn1->mat)[1][13]=1.317662;((float**)syn1->mat)[1][14]=0.704108;((float**)syn1->mat)[1][15]=-0.952949;((float**)syn1->mat)[1][16]=-1.008252;((float**)syn1->mat)[1][17]=2.538396;((float**)syn1->mat)[1][18]=-1.114626;((float**)syn1->mat)[1][19]=-0.916801;((float**)syn1->mat)[1][20]=3.950674;((float**)syn1->mat)[1][21]=1.905381;((float**)syn1->mat)[1][22]=-1.499751;((float**)syn1->mat)[1][23]=-4.292854;((float**)syn1->mat)[1][24]=2.420998;((float**)syn1->mat)[1][25]=-0.500839;((float**)syn1->mat)[1][26]=-1.044478;((float**)syn1->mat)[1][27]=0.522187;((float**)syn1->mat)[1][28]=4.489587;((float**)syn1->mat)[1][29]=0.119387;((float**)syn1->mat)[2][0]=-1.413311;((float**)syn1->mat)[2][1]=-0.515794;((float**)syn1->mat)[2][2]=-1.994178;((float**)syn1->mat)[2][3]=-0.138162;((float**)syn1->mat)[2][4]=5.881309;((float**)syn1->mat)[2][5]=-2.679809;((float**)syn1->mat)[2][6]=-5.906639;((float**)syn1->mat)[2][7]=-3.096250;((float**)syn1->mat)[2][8]=0.685993;((float**)syn1->mat)[2][9]=-0.319173;((float**)syn1->mat)[2][10]=1.990464;((float**)syn1->mat)[2][11]=1.380124;((float**)syn1->mat)[2][12]=-2.227687;((float**)syn1->mat)[2][13]=0.345473;((float**)syn1->mat)[2][14]=-3.889977;((float**)syn1->mat)[2][15]=0.048344;((float**)syn1->mat)[2][16]=1.544167;((float**)syn1->mat)[2][17]=4.111238;((float**)syn1->mat)[2][18]=-3.492348;((float**)syn1->mat)[2][19]=-2.729578;((float**)syn1->mat)[2][20]=3.672515;((float**)syn1->mat)[2][21]=-1.067796;((float**)syn1->mat)[2][22]=-4.254371;((float**)syn1->mat)[2][23]=-0.700071;((float**)syn1->mat)[2][24]=4.914087;((float**)syn1->mat)[2][25]=-0.476105;((float**)syn1->mat)[2][26]=-0.838250;((float**)syn1->mat)[2][27]=-0.583595;((float**)syn1->mat)[2][28]=6.195177;((float**)syn1->mat)[2][29]=-0.374393;((float**)syn1->mat)[3][0]=1.109959;((float**)syn1->mat)[3][1]=0.191988;((float**)syn1->mat)[3][2]=2.146165;((float**)syn1->mat)[3][3]=-2.180822;((float**)syn1->mat)[3][4]=-5.886238;((float**)syn1->mat)[3][5]=4.696073;((float**)syn1->mat)[3][6]=4.787238;((float**)syn1->mat)[3][7]=3.201991;((float**)syn1->mat)[3][8]=-4.713163;((float**)syn1->mat)[3][9]=3.106673;((float**)syn1->mat)[3][10]=-9.305729;((float**)syn1->mat)[3][11]=8.015347;((float**)syn1->mat)[3][12]=-0.432744;((float**)syn1->mat)[3][13]=0.350902;((float**)syn1->mat)[3][14]=7.314897;((float**)syn1->mat)[3][15]=-1.796243;((float**)syn1->mat)[3][16]=-0.413932;((float**)syn1->mat)[3][17]=3.160640;((float**)syn1->mat)[3][18]=-0.579722;((float**)syn1->mat)[3][19]=-0.942482;((float**)syn1->mat)[3][20]=0.343413;((float**)syn1->mat)[3][21]=-7.482828;((float**)syn1->mat)[3][22]=-0.063808;((float**)syn1->mat)[3][23]=1.460689;((float**)syn1->mat)[3][24]=0.815758;((float**)syn1->mat)[3][25]=1.722594;((float**)syn1->mat)[3][26]=-10.189059;((float**)syn1->mat)[3][27]=-3.185374;((float**)syn1->mat)[3][28]=1.259280;((float**)syn1->mat)[3][29]=-3.091129;((float**)syn1->mat)[4][0]=0.961116;((float**)syn1->mat)[4][1]=-2.032515;((float**)syn1->mat)[4][2]=2.626921;((float**)syn1->mat)[4][3]=1.765605;((float**)syn1->mat)[4][4]=2.748535;((float**)syn1->mat)[4][5]=-1.309143;((float**)syn1->mat)[4][6]=0.633505;((float**)syn1->mat)[4][7]=4.139172;((float**)syn1->mat)[4][8]=1.878681;((float**)syn1->mat)[4][9]=-1.892024;((float**)syn1->mat)[4][10]=-0.495952;((float**)syn1->mat)[4][11]=-4.067173;((float**)syn1->mat)[4][12]=0.405190;((float**)syn1->mat)[4][13]=-2.052018;((float**)syn1->mat)[4][14]=-2.537711;((float**)syn1->mat)[4][15]=0.223880;((float**)syn1->mat)[4][16]=0.915516;((float**)syn1->mat)[4][17]=-4.581836;((float**)syn1->mat)[4][18]=0.048087;((float**)syn1->mat)[4][19]=-0.375505;((float**)syn1->mat)[4][20]=-4.015101;((float**)syn1->mat)[4][21]=-2.446388;((float**)syn1->mat)[4][22]=0.823002;((float**)syn1->mat)[4][23]=2.874919;((float**)syn1->mat)[4][24]=-3.439570;((float**)syn1->mat)[4][25]=-0.959338;((float**)syn1->mat)[4][26]=2.021383;((float**)syn1->mat)[4][27]=-0.645583;((float**)syn1->mat)[4][28]=-6.172066;((float**)syn1->mat)[4][29]=-1.226192;((float**)syn1->mat)[5][0]=0.846006;((float**)syn1->mat)[5][1]=-0.304600;((float**)syn1->mat)[5][2]=1.565866;((float**)syn1->mat)[5][3]=-0.364610;((float**)syn1->mat)[5][4]=-1.666837;((float**)syn1->mat)[5][5]=0.070512;((float**)syn1->mat)[5][6]=2.626698;((float**)syn1->mat)[5][7]=2.231751;((float**)syn1->mat)[5][8]=-0.917112;((float**)syn1->mat)[5][9]=-0.898715;((float**)syn1->mat)[5][10]=-2.785989;((float**)syn1->mat)[5][11]=-2.067355;((float**)syn1->mat)[5][12]=1.174137;((float**)syn1->mat)[5][13]=-0.779162;((float**)syn1->mat)[5][14]=-0.605167;((float**)syn1->mat)[5][15]=-0.205781;((float**)syn1->mat)[5][16]=-0.823486;((float**)syn1->mat)[5][17]=-3.898803;((float**)syn1->mat)[5][18]=-0.057752;((float**)syn1->mat)[5][19]=-0.311124;((float**)syn1->mat)[5][20]=-4.738879;((float**)syn1->mat)[5][21]=-3.697937;((float**)syn1->mat)[5][22]=2.228278;((float**)syn1->mat)[5][23]=2.639877;((float**)syn1->mat)[5][24]=-4.048104;((float**)syn1->mat)[5][25]=0.848236;((float**)syn1->mat)[5][26]=-0.463334;((float**)syn1->mat)[5][27]=-0.742443;((float**)syn1->mat)[5][28]=-4.535523;((float**)syn1->mat)[5][29]=-0.816607;((float**)syn1->mat)[6][0]=0.118880;((float**)syn1->mat)[6][1]=-1.612307;((float**)syn1->mat)[6][2]=3.587981;((float**)syn1->mat)[6][3]=1.860618;((float**)syn1->mat)[6][4]=-1.889561;((float**)syn1->mat)[6][5]=0.436015;((float**)syn1->mat)[6][6]=6.603049;((float**)syn1->mat)[6][7]=5.980086;((float**)syn1->mat)[6][8]=-0.582270;((float**)syn1->mat)[6][9]=-1.630766;((float**)syn1->mat)[6][10]=-2.936054;((float**)syn1->mat)[6][11]=-2.926777;((float**)syn1->mat)[6][12]=2.890810;((float**)syn1->mat)[6][13]=-1.683028;((float**)syn1->mat)[6][14]=1.395796;((float**)syn1->mat)[6][15]=-1.090983;((float**)syn1->mat)[6][16]=-1.864521;((float**)syn1->mat)[6][17]=-5.072907;((float**)syn1->mat)[6][18]=1.137310;((float**)syn1->mat)[6][19]=0.590558;((float**)syn1->mat)[6][20]=-5.471736;((float**)syn1->mat)[6][21]=-1.076477;((float**)syn1->mat)[6][22]=3.249291;((float**)syn1->mat)[6][23]=4.003665;((float**)syn1->mat)[6][24]=-5.076550;((float**)syn1->mat)[6][25]=1.128864;((float**)syn1->mat)[6][26]=1.552872;((float**)syn1->mat)[6][27]=-0.971574;((float**)syn1->mat)[6][28]=-8.292823;((float**)syn1->mat)[6][29]=-1.739702;((float**)syn1->mat)[7][0]=0.174077;((float**)syn1->mat)[7][1]=-2.842941;((float**)syn1->mat)[7][2]=1.495489;((float**)syn1->mat)[7][3]=3.822083;((float**)syn1->mat)[7][4]=11.991820;((float**)syn1->mat)[7][5]=-7.730891;((float**)syn1->mat)[7][6]=-5.849920;((float**)syn1->mat)[7][7]=2.517161;((float**)syn1->mat)[7][8]=6.503394;((float**)syn1->mat)[7][9]=-4.044504;((float**)syn1->mat)[7][10]=1.674260;((float**)syn1->mat)[7][11]=-11.615273;((float**)syn1->mat)[7][12]=2.382777;((float**)syn1->mat)[7][13]=-2.759719;((float**)syn1->mat)[7][14]=-11.658626;((float**)syn1->mat)[7][15]=-0.231713;((float**)syn1->mat)[7][16]=2.021286;((float**)syn1->mat)[7][17]=-6.946409;((float**)syn1->mat)[7][18]=-0.278123;((float**)syn1->mat)[7][19]=-1.504960;((float**)syn1->mat)[7][20]=-6.459098;((float**)syn1->mat)[7][21]=-4.240177;((float**)syn1->mat)[7][22]=0.335849;((float**)syn1->mat)[7][23]=6.710317;((float**)syn1->mat)[7][24]=-4.703204;((float**)syn1->mat)[7][25]=-2.037041;((float**)syn1->mat)[7][26]=5.362828;((float**)syn1->mat)[7][27]=-0.134859;((float**)syn1->mat)[7][28]=-8.840103;((float**)syn1->mat)[7][29]=0.910966;((float**)syn1->mat)[8][0]=0.676653;((float**)syn1->mat)[8][1]=-0.173838;((float**)syn1->mat)[8][2]=3.677427;((float**)syn1->mat)[8][3]=0.504978;((float**)syn1->mat)[8][4]=-4.175120;((float**)syn1->mat)[8][5]=0.910940;((float**)syn1->mat)[8][6]=4.803748;((float**)syn1->mat)[8][7]=5.114991;((float**)syn1->mat)[8][8]=-1.607770;((float**)syn1->mat)[8][9]=-1.137258;((float**)syn1->mat)[8][10]=-4.547597;((float**)syn1->mat)[8][11]=-0.481734;((float**)syn1->mat)[8][12]=2.440280;((float**)syn1->mat)[8][13]=-2.115320;((float**)syn1->mat)[8][14]=4.263554;((float**)syn1->mat)[8][15]=-1.072985;((float**)syn1->mat)[8][16]=-1.162142;((float**)syn1->mat)[8][17]=-3.046068;((float**)syn1->mat)[8][18]=-0.153120;((float**)syn1->mat)[8][19]=-1.020138;((float**)syn1->mat)[8][20]=-3.640876;((float**)syn1->mat)[8][21]=-4.101482;((float**)syn1->mat)[8][22]=2.215025;((float**)syn1->mat)[8][23]=2.488670;((float**)syn1->mat)[8][24]=-2.536694;((float**)syn1->mat)[8][25]=1.632358;((float**)syn1->mat)[8][26]=-4.188701;((float**)syn1->mat)[8][27]=-2.122204;((float**)syn1->mat)[8][28]=-5.172194;((float**)syn1->mat)[8][29]=-2.409991;((float**)syn1->mat)[9][0]=0.504113;((float**)syn1->mat)[9][1]=-1.643699;((float**)syn1->mat)[9][2]=0.162590;((float**)syn1->mat)[9][3]=2.875843;((float**)syn1->mat)[9][4]=7.141473;((float**)syn1->mat)[9][5]=-5.190816;((float**)syn1->mat)[9][6]=-3.559948;((float**)syn1->mat)[9][7]=1.415747;((float**)syn1->mat)[9][8]=3.184219;((float**)syn1->mat)[9][9]=-3.922419;((float**)syn1->mat)[9][10]=2.668644;((float**)syn1->mat)[9][11]=-7.455475;((float**)syn1->mat)[9][12]=0.822227;((float**)syn1->mat)[9][13]=-2.293324;((float**)syn1->mat)[9][14]=-7.495311;((float**)syn1->mat)[9][15]=0.462452;((float**)syn1->mat)[9][16]=2.037493;((float**)syn1->mat)[9][17]=-2.661158;((float**)syn1->mat)[9][18]=-0.675064;((float**)syn1->mat)[9][19]=-1.095889;((float**)syn1->mat)[9][20]=-2.101721;((float**)syn1->mat)[9][21]=-0.780990;((float**)syn1->mat)[9][22]=-0.173412;((float**)syn1->mat)[9][23]=3.759717;((float**)syn1->mat)[9][24]=-2.169615;((float**)syn1->mat)[9][25]=-0.473325;((float**)syn1->mat)[9][26]=5.681112;((float**)syn1->mat)[9][27]=0.885054;((float**)syn1->mat)[9][28]=-3.707556;((float**)syn1->mat)[9][29]=1.194122;((float**)syn1->mat)[10][0]=0.718036;((float**)syn1->mat)[10][1]=-0.652579;((float**)syn1->mat)[10][2]=3.917149;((float**)syn1->mat)[10][3]=-1.025241;((float**)syn1->mat)[10][4]=-5.916859;((float**)syn1->mat)[10][5]=4.260535;((float**)syn1->mat)[10][6]=6.988031;((float**)syn1->mat)[10][7]=5.055713;((float**)syn1->mat)[10][8]=-4.250556;((float**)syn1->mat)[10][9]=2.395569;((float**)syn1->mat)[10][10]=-9.083617;((float**)syn1->mat)[10][11]=5.996635;((float**)syn1->mat)[10][12]=2.018665;((float**)syn1->mat)[10][13]=-0.679127;((float**)syn1->mat)[10][14]=8.281112;((float**)syn1->mat)[10][15]=-1.820894;((float**)syn1->mat)[10][16]=-1.553990;((float**)syn1->mat)[10][17]=-0.115402;((float**)syn1->mat)[10][18]=-0.355731;((float**)syn1->mat)[10][19]=-0.144803;((float**)syn1->mat)[10][20]=-1.947263;((float**)syn1->mat)[10][21]=-6.582301;((float**)syn1->mat)[10][22]=0.820859;((float**)syn1->mat)[10][23]=1.868673;((float**)syn1->mat)[10][24]=-0.723460;((float**)syn1->mat)[10][25]=3.459791;((float**)syn1->mat)[10][26]=-7.273926;((float**)syn1->mat)[10][27]=-4.141278;((float**)syn1->mat)[10][28]=-1.617763;((float**)syn1->mat)[10][29]=-2.614064;((float**)syn1->mat)[11][0]=0.307781;((float**)syn1->mat)[11][1]=-2.847705;((float**)syn1->mat)[11][2]=0.944062;((float**)syn1->mat)[11][3]=0.998625;((float**)syn1->mat)[11][4]=6.137892;((float**)syn1->mat)[11][5]=-2.884806;((float**)syn1->mat)[11][6]=-3.978332;((float**)syn1->mat)[11][7]=0.382905;((float**)syn1->mat)[11][8]=2.809139;((float**)syn1->mat)[11][9]=-2.302915;((float**)syn1->mat)[11][10]=-0.673100;((float**)syn1->mat)[11][11]=-1.936066;((float**)syn1->mat)[11][12]=2.513796;((float**)syn1->mat)[11][13]=-1.734937;((float**)syn1->mat)[11][14]=-6.052541;((float**)syn1->mat)[11][15]=0.498922;((float**)syn1->mat)[11][16]=3.133592;((float**)syn1->mat)[11][17]=-0.935126;((float**)syn1->mat)[11][18]=-3.196336;((float**)syn1->mat)[11][19]=-1.465289;((float**)syn1->mat)[11][20]=-1.591982;((float**)syn1->mat)[11][21]=-4.080135;((float**)syn1->mat)[11][22]=-2.544140;((float**)syn1->mat)[11][23]=2.557560;((float**)syn1->mat)[11][24]=0.314369;((float**)syn1->mat)[11][25]=1.269748;((float**)syn1->mat)[11][26]=-0.533930;((float**)syn1->mat)[11][27]=-1.655235;((float**)syn1->mat)[11][28]=-2.937499;((float**)syn1->mat)[11][29]=-1.852991;((float**)syn1->mat)[12][0]=-1.350454;((float**)syn1->mat)[12][1]=0.420997;((float**)syn1->mat)[12][2]=-0.949470;((float**)syn1->mat)[12][3]=-2.481737;((float**)syn1->mat)[12][4]=-6.000406;((float**)syn1->mat)[12][5]=2.063386;((float**)syn1->mat)[12][6]=2.782075;((float**)syn1->mat)[12][7]=-1.175950;((float**)syn1->mat)[12][8]=-0.464205;((float**)syn1->mat)[12][9]=1.837551;((float**)syn1->mat)[12][10]=-1.206054;((float**)syn1->mat)[12][11]=1.462227;((float**)syn1->mat)[12][12]=-2.333613;((float**)syn1->mat)[12][13]=0.712485;((float**)syn1->mat)[12][14]=3.991717;((float**)syn1->mat)[12][15]=-1.873411;((float**)syn1->mat)[12][16]=-2.240726;((float**)syn1->mat)[12][17]=-0.273554;((float**)syn1->mat)[12][18]=1.884867;((float**)syn1->mat)[12][19]=1.673204;((float**)syn1->mat)[12][20]=-0.125634;((float**)syn1->mat)[12][21]=3.149173;((float**)syn1->mat)[12][22]=1.302605;((float**)syn1->mat)[12][23]=-2.090202;((float**)syn1->mat)[12][24]=-0.833926;((float**)syn1->mat)[12][25]=-2.306410;((float**)syn1->mat)[12][26]=0.665625;((float**)syn1->mat)[12][27]=-0.323324;((float**)syn1->mat)[12][28]=0.442218;((float**)syn1->mat)[12][29]=-1.104386;((float**)syn1->mat)[13][0]=-0.893680;((float**)syn1->mat)[13][1]=-0.660632;((float**)syn1->mat)[13][2]=-0.644444;((float**)syn1->mat)[13][3]=-3.158346;((float**)syn1->mat)[13][4]=-4.045657;((float**)syn1->mat)[13][5]=2.687685;((float**)syn1->mat)[13][6]=0.042764;((float**)syn1->mat)[13][7]=-1.181130;((float**)syn1->mat)[13][8]=-1.002332;((float**)syn1->mat)[13][9]=0.694757;((float**)syn1->mat)[13][10]=-2.177421;((float**)syn1->mat)[13][11]=4.221119;((float**)syn1->mat)[13][12]=-1.826200;((float**)syn1->mat)[13][13]=-0.244573;((float**)syn1->mat)[13][14]=3.025695;((float**)syn1->mat)[13][15]=-0.607557;((float**)syn1->mat)[13][16]=-1.050212;((float**)syn1->mat)[13][17]=1.703688;((float**)syn1->mat)[13][18]=-1.489733;((float**)syn1->mat)[13][19]=-0.058857;((float**)syn1->mat)[13][20]=2.306285;((float**)syn1->mat)[13][21]=-1.139607;((float**)syn1->mat)[13][22]=-1.959545;((float**)syn1->mat)[13][23]=-1.009452;((float**)syn1->mat)[13][24]=1.702415;((float**)syn1->mat)[13][25]=0.943456;((float**)syn1->mat)[13][26]=-4.062872;((float**)syn1->mat)[13][27]=-0.313141;((float**)syn1->mat)[13][28]=3.948841;((float**)syn1->mat)[13][29]=-1.171460;((float**)syn1->mat)[14][0]=-1.238867;((float**)syn1->mat)[14][1]=-0.054689;((float**)syn1->mat)[14][2]=-5.175598;((float**)syn1->mat)[14][3]=-1.208157;((float**)syn1->mat)[14][4]=-1.684824;((float**)syn1->mat)[14][5]=-0.750282;((float**)syn1->mat)[14][6]=-4.057828;((float**)syn1->mat)[14][7]=-5.662192;((float**)syn1->mat)[14][8]=0.350853;((float**)syn1->mat)[14][9]=-0.002341;((float**)syn1->mat)[14][10]=4.797182;((float**)syn1->mat)[14][11]=-0.185429;((float**)syn1->mat)[14][12]=-4.620930;((float**)syn1->mat)[14][13]=0.823304;((float**)syn1->mat)[14][14]=-1.324299;((float**)syn1->mat)[14][15]=-1.047984;((float**)syn1->mat)[14][16]=-0.884937;((float**)syn1->mat)[14][17]=2.209319;((float**)syn1->mat)[14][18]=0.816429;((float**)syn1->mat)[14][19]=0.496609;((float**)syn1->mat)[14][20]=3.505179;((float**)syn1->mat)[14][21]=8.084231;((float**)syn1->mat)[14][22]=-1.360444;((float**)syn1->mat)[14][23]=-5.191607;((float**)syn1->mat)[14][24]=1.854187;((float**)syn1->mat)[14][25]=-4.470481;((float**)syn1->mat)[14][26]=2.449089;((float**)syn1->mat)[14][27]=2.974238;((float**)syn1->mat)[14][28]=2.814302;((float**)syn1->mat)[14][29]=1.460334;((float**)syn1->mat)[15][0]=-2.311942;((float**)syn1->mat)[15][1]=2.086069;((float**)syn1->mat)[15][2]=-2.952416;((float**)syn1->mat)[15][3]=-3.603230;((float**)syn1->mat)[15][4]=-10.590318;((float**)syn1->mat)[15][5]=2.396792;((float**)syn1->mat)[15][6]=1.564996;((float**)syn1->mat)[15][7]=-5.836871;((float**)syn1->mat)[15][8]=-2.818942;((float**)syn1->mat)[15][9]=2.047905;((float**)syn1->mat)[15][10]=3.104062;((float**)syn1->mat)[15][11]=0.959187;((float**)syn1->mat)[15][12]=-4.637760;((float**)syn1->mat)[15][13]=1.942760;((float**)syn1->mat)[15][14]=5.588029;((float**)syn1->mat)[15][15]=-1.252733;((float**)syn1->mat)[15][16]=-3.295873;((float**)syn1->mat)[15][17]=0.707941;((float**)syn1->mat)[15][18]=2.125034;((float**)syn1->mat)[15][19]=2.589040;((float**)syn1->mat)[15][20]=2.473874;((float**)syn1->mat)[15][21]=11.210567;((float**)syn1->mat)[15][22]=2.403301;((float**)syn1->mat)[15][23]=-9.678681;((float**)syn1->mat)[15][24]=-0.487370;((float**)syn1->mat)[15][25]=-5.006008;((float**)syn1->mat)[15][26]=2.230551;((float**)syn1->mat)[15][27]=1.693283;((float**)syn1->mat)[15][28]=1.972391;((float**)syn1->mat)[15][29]=0.356348;((float**)syn1->mat)[16][0]=-0.473566;((float**)syn1->mat)[16][1]=-0.454774;((float**)syn1->mat)[16][2]=-3.769122;((float**)syn1->mat)[16][3]=0.241253;((float**)syn1->mat)[16][4]=3.140484;((float**)syn1->mat)[16][5]=-1.713102;((float**)syn1->mat)[16][6]=-6.208061;((float**)syn1->mat)[16][7]=-6.984072;((float**)syn1->mat)[16][8]=0.997648;((float**)syn1->mat)[16][9]=-1.149798;((float**)syn1->mat)[16][10]=5.534097;((float**)syn1->mat)[16][11]=-2.480928;((float**)syn1->mat)[16][12]=-2.682177;((float**)syn1->mat)[16][13]=0.276380;((float**)syn1->mat)[16][14]=-4.889588;((float**)syn1->mat)[16][15]=-0.551055;((float**)syn1->mat)[16][16]=0.738521;((float**)syn1->mat)[16][17]=2.433455;((float**)syn1->mat)[16][18]=-1.704965;((float**)syn1->mat)[16][19]=-1.604614;((float**)syn1->mat)[16][20]=2.598282;((float**)syn1->mat)[16][21]=3.093914;((float**)syn1->mat)[16][22]=-1.800853;((float**)syn1->mat)[16][23]=-3.426843;((float**)syn1->mat)[16][24]=3.592186;((float**)syn1->mat)[16][25]=-1.013992;((float**)syn1->mat)[16][26]=2.636743;((float**)syn1->mat)[16][27]=1.691532;((float**)syn1->mat)[16][28]=4.209240;((float**)syn1->mat)[16][29]=0.175728;((float**)syn1->mat)[17][0]=-0.959452;((float**)syn1->mat)[17][1]=0.450694;((float**)syn1->mat)[17][2]=-2.134427;((float**)syn1->mat)[17][3]=-1.256036;((float**)syn1->mat)[17][4]=-2.173069;((float**)syn1->mat)[17][5]=-0.840728;((float**)syn1->mat)[17][6]=0.269830;((float**)syn1->mat)[17][7]=-2.611911;((float**)syn1->mat)[17][8]=-0.299409;((float**)syn1->mat)[17][9]=-1.227267;((float**)syn1->mat)[17][10]=3.428720;((float**)syn1->mat)[17][11]=-1.595580;((float**)syn1->mat)[17][12]=-3.700741;((float**)syn1->mat)[17][13]=-0.672935;((float**)syn1->mat)[17][14]=-0.357548;((float**)syn1->mat)[17][15]=-0.794486;((float**)syn1->mat)[17][16]=-2.502862;((float**)syn1->mat)[17][17]=-2.128783;((float**)syn1->mat)[17][18]=1.755259;((float**)syn1->mat)[17][19]=-0.297487;((float**)syn1->mat)[17][20]=-0.815630;((float**)syn1->mat)[17][21]=6.864399;((float**)syn1->mat)[17][22]=1.740871;((float**)syn1->mat)[17][23]=-4.264221;((float**)syn1->mat)[17][24]=-1.196697;((float**)syn1->mat)[17][25]=-3.585348;((float**)syn1->mat)[17][26]=5.020421;((float**)syn1->mat)[17][27]=0.701057;((float**)syn1->mat)[17][28]=0.523387;((float**)syn1->mat)[17][29]=0.994256;((float**)syn1->mat)[18][0]=0.568753;((float**)syn1->mat)[18][1]=-1.699447;((float**)syn1->mat)[18][2]=-0.225028;((float**)syn1->mat)[18][3]=0.572505;((float**)syn1->mat)[18][4]=2.480478;((float**)syn1->mat)[18][5]=-0.491309;((float**)syn1->mat)[18][6]=-3.423013;((float**)syn1->mat)[18][7]=-0.312181;((float**)syn1->mat)[18][8]=-0.519990;((float**)syn1->mat)[18][9]=-1.035054;((float**)syn1->mat)[18][10]=-2.115210;((float**)syn1->mat)[18][11]=2.120624;((float**)syn1->mat)[18][12]=0.602564;((float**)syn1->mat)[18][13]=-0.518610;((float**)syn1->mat)[18][14]=-1.508489;((float**)syn1->mat)[18][15]=0.367845;((float**)syn1->mat)[18][16]=1.020725;((float**)syn1->mat)[18][17]=2.418897;((float**)syn1->mat)[18][18]=-2.302004;((float**)syn1->mat)[18][19]=-0.669516;((float**)syn1->mat)[18][20]=1.194874;((float**)syn1->mat)[18][21]=-4.998054;((float**)syn1->mat)[18][22]=-3.335124;((float**)syn1->mat)[18][23]=1.232736;((float**)syn1->mat)[18][24]=2.003984;((float**)syn1->mat)[18][25]=2.064871;((float**)syn1->mat)[18][26]=-4.431415;((float**)syn1->mat)[18][27]=-0.868775;((float**)syn1->mat)[18][28]=1.374240;((float**)syn1->mat)[18][29]=-0.146374;((float**)syn1->mat)[19][0]=-0.867944;((float**)syn1->mat)[19][1]=0.404744;((float**)syn1->mat)[19][2]=-0.421135;((float**)syn1->mat)[19][3]=-2.048415;((float**)syn1->mat)[19][4]=-2.266989;((float**)syn1->mat)[19][5]=1.108705;((float**)syn1->mat)[19][6]=0.790705;((float**)syn1->mat)[19][7]=-0.238297;((float**)syn1->mat)[19][8]=-1.727581;((float**)syn1->mat)[19][9]=0.349406;((float**)syn1->mat)[19][10]=0.178892;((float**)syn1->mat)[19][11]=1.794061;((float**)syn1->mat)[19][12]=-0.866598;((float**)syn1->mat)[19][13]=0.930543;((float**)syn1->mat)[19][14]=2.951372;((float**)syn1->mat)[19][15]=-0.361163;((float**)syn1->mat)[19][16]=-1.674644;((float**)syn1->mat)[19][17]=1.809051;((float**)syn1->mat)[19][18]=0.487646;((float**)syn1->mat)[19][19]=-1.271207;((float**)syn1->mat)[19][20]=1.812047;((float**)syn1->mat)[19][21]=0.722970;((float**)syn1->mat)[19][22]=-1.161245;((float**)syn1->mat)[19][23]=-1.464017;((float**)syn1->mat)[19][24]=0.603790;((float**)syn1->mat)[19][25]=-0.544690;((float**)syn1->mat)[19][26]=-1.447628;((float**)syn1->mat)[19][27]=0.524692;((float**)syn1->mat)[19][28]=1.403492;((float**)syn1->mat)[19][29]=-1.588721;
 }
