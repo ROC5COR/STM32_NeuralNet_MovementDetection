@@ -354,15 +354,6 @@ void matrixMultiply(MAT *mat1, MAT *mat2, MAT *matOut){
     }
 }
 
-void filterAcc(MAT *mat1, MAT *matOut){
-	if(mat1->matM != matOut->matM || mat1->matM != matOut->matM)
-	    {
-	        printf("Error in filter : bad dimension\n");
-	        return;
-	    }
-
-}
-
 uint16_t float_to_hexa(float input){
 	if(input > 15){input = 15;}
 	if(input < -15){input = -15;}

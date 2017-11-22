@@ -47,8 +47,6 @@ void fillRandomValuesFloat(MAT *mat1, int min, int max);
 void matrixSubstract(MAT *mat1, MAT *mat2, MAT *matOut);
 void matrixAdd(MAT *mat1, MAT *mat2, MAT *matOut);
 void matrixMultiply(MAT *mat1, MAT *mat2, MAT *matOut);
-void filterAcc(MAT *mat1, MAT *matOut);
-
 
 uint16_t float_to_hexa(float input);
 
