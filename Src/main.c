@@ -412,7 +412,6 @@ int main(void)
 #ifdef ACCELERO
 
 	  initTestingMatrix();
-	  ADXL345_Init(&hi2c3);
 	  ADXL345_Init(&ACCELERO_I2C);
 	  HAL_Delay(10);
 	  printf("Device ID : 0x%02x\n", getDeviceID(&ACCELERO_I2C));
@@ -627,7 +626,7 @@ void filter_acc(){
 	  int16_t i2c_data_output[1][INPUT_SIZE*2];
 	  while(i<INPUT_SIZE){
 		  while (j<10){
-			  getOutput(&hi2c3,i2c_data);
+			  getOutput(&ACCELERO_I2C,i2c_data);
 			  i2c_data_temp[0]+=i2c_data[0];
 			  i2c_data_temp[1]+=i2c_data[1];
 			  j++;
