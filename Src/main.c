@@ -45,6 +45,8 @@
 #include "ai_tools.h"
 #include "ai_data.h"
 #include "adxl345.h"
+#include "com_functions.h"
+
 
 #define ACCELERO_I2C hi2c3
 #define SAMPLE_SIZE 102
@@ -286,6 +288,43 @@ void printMatData(MAT* mat,char *name){
     printf("\n}\n");
 }
 
+void testLayerCom(){
+	printf("test ongoing...\n");
+	init_com();
+	float LAYER1[20][75] = {{0}};
+	init_LAYER1(LAYER1);
+
+	printf("initialisations effectues!  \n");
+
+	send_STM32_L1_request();
+
+	int i,j,verif;
+	float temp_fpga_element;
+	for (i=0;i==20;i++)
+		{
+			for (j=0;j==75;j++)
+			{
+				send_layer_element(LAYER1[i][j]);
+				wait_for_ack_FPGA();
+				printf("le FPGA a bien recut l'element %d _ %d\n",i,j);
+				wait_for_req_FPGA();
+				printf("le FPGA a renvoye son element %d _ %d\n",i,j);
+				read_fpga_layer_element(temp_fpga_element);
+				verif=verif_layer_element(LAYER1[i][j], temp_fpga_element);
+				if (verif==0)
+				{
+					send_verif_false();
+					printf("l'element renvoye est different\n");
+					break;
+				}else{
+					send_verif_OK();
+					printf("element du FPGA = element du STM32\n");
+				}
+			}
+		}
+	send_STM32_L2_request();
+}
+
 
 /* USER CODE END 0 */
 
@@ -329,11 +368,11 @@ int main(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
   //Clock Output
-  GPIO_InitStruct.Pin = GPIO_PIN_8;
+  /*GPIO_InitStruct.Pin = GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);*/
 
 
 
@@ -451,6 +490,8 @@ int main(void)
 	  printMatrix(l2,(char*)"Results 4 : ");
 
 	  freeTestingMatrix();
+
+	  testLayerCom();
 
 #endif
 #ifdef TRAINING
