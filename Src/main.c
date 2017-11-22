@@ -47,7 +47,6 @@
 #include "adxl345.h"
 
 #define SAMPLE_SIZE 102
-#define FILTER_SIZE 150
 #define INPUT_SIZE 15
 #define HIDDEN_NEURON 30
 #define TRAINING_

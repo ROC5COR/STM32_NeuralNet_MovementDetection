@@ -354,6 +354,7 @@ void matrixMultiply(MAT *mat1, MAT *mat2, MAT *matOut){
     }
 }
 
+<<<<<<< HEAD
 void filterAcc(MAT *mat1, MAT *matOut){
 	if(mat1->matM != matOut->matM || mat1->matM != matOut->matM)
 	    {
@@ -362,4 +363,28 @@ void filterAcc(MAT *mat1, MAT *matOut){
 	    }
 
 }
+=======
+uint16_t float_to_hexa(float input){
+	if(input > 15){input = 15;}
+	if(input < -15){input = -15;}
+
+	int sign = 0x0;
+	if(input < 0){
+		sign = 0x1;
+	}
+	uint16_t int_part = floor(input);
+	uint16_t frac_part = (input - (float)int_part)*2048;
+	printf("Conversion ent(hexa):%02x ; frac(hexa):%04x\n",int_part,frac_part);
+	printf("Conversion ent(int):%u ; frac(int):%u\n",int_part,frac_part);
+
+	uint16_t total = 0x0000;
+	total |= sign<<15;
+	total |= int_part<<11;
+	total |= frac_part;
+	printf("Total (hexa): %05x ; Total(int):%d\n",total,total);
+
+	return total;
+}
+
+>>>>>>> branch 'master' of https://github.com/ROC5COR/STM32_NeuralNet_MovementDetection.git
 
