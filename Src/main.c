@@ -46,6 +46,7 @@
 #include "ai_data.h"
 #include "adxl345.h"
 
+#define ACCELERO_I2C hi2c3
 #define SAMPLE_SIZE 102
 #define INPUT_SIZE 15
 #define HIDDEN_NEURON 30
@@ -57,7 +58,7 @@
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
-I2C_HandleTypeDef hi2c1;
+I2C_HandleTypeDef hi2c3;
 
 UART_HandleTypeDef huart2;
 
@@ -81,8 +82,8 @@ int _write(int file, char *ptr, int len)
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_I2C1_Init(void);
 static void MX_USART2_UART_Init(void);
+static void MX_I2C3_Init(void);
 
 /* USER CODE BEGIN PFP */
 
@@ -316,8 +317,8 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_I2C1_Init();
   MX_USART2_UART_Init();
+  MX_I2C3_Init();
 
   /* USER CODE BEGIN 2 */
   printf("\n\nSTM32 Neural Net implementation\n");
@@ -410,21 +411,18 @@ int main(void)
 
 #ifdef ACCELERO
 
-
 	  initTestingMatrix();
-	  ADXL345_Init(&hi2c1);
+	  ADXL345_Init(&hi2c3);
+	  ADXL345_Init(&ACCELERO_I2C);
 	  HAL_Delay(10);
-	  printf("Device ID : 0x%02x\n", getDeviceID(&hi2c1));
+	  printf("Device ID : 0x%02x\n", getDeviceID(&ACCELERO_I2C));
 	  HAL_Delay(10);
-	  setDataFormatControl(&hi2c1,0x0B);
+	  setDataFormatControl(&ACCELERO_I2C,0x0B);
 	  HAL_Delay(10);
-	  setDataRate(&hi2c1,ADXL345_3200HZ);
+	  setDataRate(&ACCELERO_I2C,ADXL345_3200HZ);
 	  HAL_Delay(10);
-	  setPowerControl(&hi2c1,MeasurementMode);
+	  setPowerControl(&ACCELERO_I2C,MeasurementMode);
 	  HAL_Delay(10);
-
-
-
 
 
 #endif
@@ -516,9 +514,9 @@ void SystemClock_Config(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_I2C1;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_I2C3;
   PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
-  PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
+  PeriphClkInit.I2c3ClockSelection = RCC_I2C3CLKSOURCE_PCLK1;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
@@ -543,34 +541,35 @@ void SystemClock_Config(void)
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
-/* I2C1 init function */
-static void MX_I2C1_Init(void)
+/* I2C3 init function */
+static void MX_I2C3_Init(void)
 {
 
-  hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x2010091A;
-  hi2c1.Init.OwnAddress1 = 0;
-  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c1.Init.OwnAddress2 = 0;
-  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
-  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  hi2c3.Instance = I2C3;
+  hi2c3.Init.Timing = 0x00000E14;
+  hi2c3.Init.OwnAddress1 = 0;
+  hi2c3.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c3.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c3.Init.OwnAddress2 = 0;
+  hi2c3.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c3.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c3.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c3) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
 
+
     /**Configure Analogue filter 
     */
-  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c3, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
 
     /**Configure Digital filter 
     */
-  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c3, 0) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
@@ -582,7 +581,7 @@ static void MX_USART2_UART_Init(void)
 {
 
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
+  huart2.Init.BaudRate = 9600;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
@@ -609,6 +608,7 @@ static void MX_GPIO_Init(void)
 {
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
@@ -627,7 +627,7 @@ void filter_acc(){
 	  int16_t i2c_data_output[1][INPUT_SIZE*2];
 	  while(i<INPUT_SIZE){
 		  while (j<10){
-			  getOutput(&hi2c1,i2c_data);
+			  getOutput(&hi2c3,i2c_data);
 			  i2c_data_temp[0]+=i2c_data[0];
 			  i2c_data_temp[1]+=i2c_data[1];
 			  j++;
