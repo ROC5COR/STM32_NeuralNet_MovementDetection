@@ -56,6 +56,7 @@
 #define TESTING_
 #define ACCELERO
 #define LOUKA_
+#define LOUKA2_
 #define ALEX
 #define COMMUNICATION_
 /* USER CODE END Includes */
@@ -416,7 +417,81 @@ int main(void)
 
 	 // uint32_t endTime, startTime = HAL_GetTick();
 
+
 #ifdef LOUKA
+	  MAT *loukaInput = createMatrix_float(1,20);
+	  ((float**)loukaInput->mat)[0][0] = 0.766;
+	  ((float**)loukaInput->mat)[0][1] = 0.887;
+	  ((float**)loukaInput->mat)[0][2] = 0.974;
+	  ((float**)loukaInput->mat)[0][3] = 0.407;
+	  ((float**)loukaInput->mat)[0][4] = 0.381;
+	  ((float**)loukaInput->mat)[0][5] = 0.073;
+	  ((float**)loukaInput->mat)[0][6] = 0.351;
+	  ((float**)loukaInput->mat)[0][7] = 0.010;
+	  ((float**)loukaInput->mat)[0][8] = 0.493;
+	  ((float**)loukaInput->mat)[0][9] = 0.811;
+	  ((float**)loukaInput->mat)[0][10] = 0.606;
+	  ((float**)loukaInput->mat)[0][11] = 0.138;
+	  ((float**)loukaInput->mat)[0][12] = 0.816;
+	  ((float**)loukaInput->mat)[0][13] = 0.375;
+	  ((float**)loukaInput->mat)[0][14] = 0.157;
+	  ((float**)loukaInput->mat)[0][15] = 0.212;
+	  ((float**)loukaInput->mat)[0][16] = 0.020;
+	  ((float**)loukaInput->mat)[0][17] = 0.652;
+	  ((float**)loukaInput->mat)[0][18] = 0.163;
+	  ((float**)loukaInput->mat)[0][19] = 0.177;
+
+
+	  MAT *loukaLayer = createMatrix_float(20,1);
+	  ((float**)loukaLayer->mat)[0][0] = 0.833;
+	  ((float**)loukaLayer->mat)[1][0] = 0.100;
+	  ((float**)loukaLayer->mat)[2][0] = 1.443;
+	  ((float**)loukaLayer->mat)[3][0] = 4.884;
+	  ((float**)loukaLayer->mat)[4][0] = -9.564;
+	  ((float**)loukaLayer->mat)[5][0] = 11.234;
+	  ((float**)loukaLayer->mat)[6][0] = -10.786;
+	  ((float**)loukaLayer->mat)[7][0] = 0.938;
+	  ((float**)loukaLayer->mat)[8][0] = 3.435;
+	  ((float**)loukaLayer->mat)[9][0] = 3.981;
+	  ((float**)loukaLayer->mat)[10][0] = -9.893;
+	  ((float**)loukaLayer->mat)[11][0] = -12.199;
+	  ((float**)loukaLayer->mat)[12][0] = -6.581;
+	  ((float**)loukaLayer->mat)[13][0] = 4.708;
+	  ((float**)loukaLayer->mat)[14][0] = 8.677;
+	  ((float**)loukaLayer->mat)[15][0] = 11.455;
+	  ((float**)loukaLayer->mat)[16][0] = 9.491;
+	  ((float**)loukaLayer->mat)[17][0] = 9.975;
+	  ((float**)loukaLayer->mat)[18][0] = -1.340;
+	  ((float**)loukaLayer->mat)[19][0] = 5.461;
+
+	  int tab[16] = {0};
+	  for(int i = 0; i < 20; i++){
+		  read_bits_layer(((float**)loukaLayer->mat)[i][0],tab);
+		  printf("layer_test[%d:%d]=16'b",15+i*16,i*16);
+		  for(int j = 15; j>=0; j--){
+			  printf("%d",tab[j]);
+		  }
+		  printf(";\n");
+
+	  }
+
+
+	  MAT *loukaOut = createMatrix_float(1,1);
+	  matrixProduct_float(loukaInput,loukaLayer,loukaOut);
+	  printMatrix(loukaOut,(char*)"LOUKA : ");
+
+	  read_bits_layer(((float**)loukaOut->mat)[0][0],tab);
+	  	  for(int i = 15; i >=0; i--){
+	  		  printf("%d,",tab[i]);
+	  	  }
+	  	  printf("\n");
+
+	  sigmoid_matrix(loukaOut,loukaOut);
+	  printMatrix(loukaOut,(char*)"LOUKA SIG : ");
+
+#endif
+
+#ifdef LOUKA2
 	  MAT *loukaInput = createMatrix_float(1,3);
 	  ((float**)loukaInput->mat)[0][0] = 0.210;
 	  ((float**)loukaInput->mat)[0][1] = 0.962;
@@ -678,7 +753,7 @@ void filter_acc(){
 	  int16_t i2c_data_pre_filter[1][INPUT_SIZE*2];
 	  int16_t i2c_data_output[1][INPUT_SIZE*2];
 	  while(i<INPUT_SIZE){
-		  while (j<128){
+		  while (j<30){
 			  getOutput(&ACCELERO_I2C,i2c_data);
 			  i2c_data_temp[0]+=i2c_data[0];
 			  i2c_data_temp[1]+=i2c_data[1];
@@ -686,8 +761,8 @@ void filter_acc(){
 
 		  }
 
-		  i2c_data_filter[0][2*i] = i2c_data_temp[0]/128.0;
-		  i2c_data_filter[0][1+2*i] = i2c_data_temp[1]/128.0;
+		  i2c_data_filter[0][2*i] = i2c_data_temp[0]/30.0;
+		  i2c_data_filter[0][1+2*i] = i2c_data_temp[1]/30.0;
 
 		  //printf("X:%d, Y:%d\n",i2c_data_filter[0][2*i],i2c_data_filter[0][1+2*i]);
 		  //((float**)input->mat)[0][2+3*i] =  ((float**)input->mat)[0][2+3*i]/10;
