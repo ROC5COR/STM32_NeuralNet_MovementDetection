@@ -50,13 +50,14 @@
 
 #define ACCELERO_I2C hi2c3
 #define SAMPLE_SIZE 102
-#define INPUT_SIZE 15
+#define INPUT_SIZE 150
 #define HIDDEN_NEURON 30
 #define TRAINING_
 #define TESTING_
 #define ACCELERO
 #define LOUKA_
 #define ALEX
+#define COMMUNICATION_
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -100,6 +101,7 @@ void fill_matrix_input_3();
 void fill_static_matrix_inputs();
 void fill_static_matrix_outputs();
 void fill_matrix_syn1();
+void fill_matrix_circle();
 void fill_matrix_syn2();
 
 /* USER CODE END PFP */
@@ -111,7 +113,7 @@ MAT *l2;
 MAT *syn1;
 MAT *syn2;
 MAT *input;
-MAT *input_pre_filter;
+MAT *input_filter;
 
 MAT *l1_complete;
 MAT *l2_complete;
@@ -124,6 +126,7 @@ MAT *inputsTranspose;
 
 //Training matrices (plus testing matrices)
 //MAT *inputs;
+MAT *circle;
 MAT *l2Error;
 MAT *l1Error;
 MAT *l1Temp;
@@ -144,11 +147,12 @@ float outputs[SAMPLE_SIZE][4];
 
 
 void initTestingMatrix(){
-input = createMatrix_float(1,INPUT_SIZE*2);
-input_pre_filter = createMatrix_float(1,INPUT_SIZE*2);
+	input = createMatrix_float(1,INPUT_SIZE*2);
+	input_filter = createMatrix_float(1,INPUT_SIZE*2/10);
     l1 = createMatrix_float(1,HIDDEN_NEURON);
     l2 = createMatrix_float(1,4);
     output = createMatrix_float(1,INPUT_SIZE*2);
+    circle = createMatrix_float(1,HIDDEN_NEURON*10);
 }
 void freeTestingMatrix(){
     free(input);
@@ -171,6 +175,7 @@ void initTrainingSoloMatrix(){
     l2 = createMatrix_float(1,4);
     l2Error = createMatrix_float(1,4);
     output = createMatrix_float(1,4);
+
 }
 void freeTrainingSoloMatrix(){
     free(input);
@@ -394,7 +399,9 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
+#ifdef COMMUNICATION
+  testLayerCom();
+#endif
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
@@ -507,6 +514,8 @@ int main(void)
 #endif
 
 	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+
+#ifdef ALEX
 while (1)
  {
 	if (HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_13) == GPIO_PIN_RESET){
@@ -515,6 +524,7 @@ while (1)
 
 	}
   }
+#endif
   /* USER CODE END 3 */
 
 }
@@ -660,13 +670,15 @@ void filter_acc(){
 	 // i2c_startTime = HAL_GetTick();
 	  int i = 0;
 	  int j = 0;
+	  int k =1;
+	  int l=1;
 	  int16_t i2c_data[3] = {0, 0,0};
 	  int16_t i2c_data_temp[3] ={0,0,0};
 	  int16_t i2c_data_filter[1][INPUT_SIZE*2];
 	  int16_t i2c_data_pre_filter[1][INPUT_SIZE*2];
 	  int16_t i2c_data_output[1][INPUT_SIZE*2];
 	  while(i<INPUT_SIZE){
-		  while (j<10){
+		  while (j<128){
 			  getOutput(&ACCELERO_I2C,i2c_data);
 			  i2c_data_temp[0]+=i2c_data[0];
 			  i2c_data_temp[1]+=i2c_data[1];
@@ -674,8 +686,8 @@ void filter_acc(){
 
 		  }
 
-		  i2c_data_filter[0][2*i] = i2c_data_temp[0]/10.0;
-		  i2c_data_filter[0][1+2*i] = i2c_data_temp[1]/10.0;
+		  i2c_data_filter[0][2*i] = i2c_data_temp[0]/128.0;
+		  i2c_data_filter[0][1+2*i] = i2c_data_temp[1]/128.0;
 
 		  //printf("X:%d, Y:%d\n",i2c_data_filter[0][2*i],i2c_data_filter[0][1+2*i]);
 		  //((float**)input->mat)[0][2+3*i] =  ((float**)input->mat)[0][2+3*i]/10;
@@ -683,7 +695,7 @@ void filter_acc(){
 		  j=0;
 		  i2c_data_temp[0]=0;
 		  i2c_data_temp[1]=0;
-		  HAL_Delay(100);
+		  HAL_Delay(10);
 
 	  }
 	   // printf("Fin acquisition\n");
@@ -695,10 +707,12 @@ void filter_acc(){
 		i2c_data_output[0][1]=i2c_data_filter[0][1];
 
 		//printf("suppression offset\n");
-		((float**)input->mat)[0][0]=i2c_data_output[0][0];
-		((float**)input->mat)[0][1]=i2c_data_output[0][1];
+		((float**)input->mat)[0][0]=0;
+		((float**)input->mat)[0][1]=0;
+		((float**)input_filter->mat)[0][0]=0;
+		((float**)input_filter->mat)[0][1]=0;
 
-		printf("Data\n");
+		//printf("Data\n");
 		printf("%f\n",((float**)input->mat)[0][0]);
 		printf("%f\n",((float**)input->mat)[0][1]);
 
@@ -710,10 +724,18 @@ void filter_acc(){
 		  i2c_data_output[0][2*i]=i2c_data_filter[0][2*i]-i2c_data_pre_filter[0][2*i];
 		  i2c_data_output[0][1+2*i]=i2c_data_filter[0][1+2*i]-i2c_data_pre_filter[0][1+2*i];
 
+		  if (k==10) {
+			  ((float**)input_filter->mat)[0][2*l]=i2c_data_output[0][2*l];
+			  ((float**)input_filter->mat)[0][2*l+1]=i2c_data_output[0][1+2*l];
+			  k=1;
+			  l++;
+		  }
+		  k++;
+
 		  ((float**)input->mat)[0][2*i]=i2c_data_output[0][2*i];
 		  ((float**)input->mat)[0][2*i+1]=i2c_data_output[0][1+2*i];
 
-		  printf("Data\n");
+		  //printf("Data\n");
 		  printf("%f\n",((float**)input->mat)[0][2*i]);
 		  printf("%f\n",((float**)input->mat)[0][1+2*i]);
 
@@ -728,6 +750,9 @@ void fill_matrix_syn1(){
 }
 void fill_matrix_syn2(){
 ((float**)syn2->mat)[0][0]=-0.860748;((float**)syn2->mat)[0][1]=-0.946414;((float**)syn2->mat)[0][2]=0.510868;((float**)syn2->mat)[0][3]=0.093052;((float**)syn2->mat)[1][0]=0.578272;((float**)syn2->mat)[1][1]=0.437867;((float**)syn2->mat)[1][2]=-0.425710;((float**)syn2->mat)[1][3]=0.235929;((float**)syn2->mat)[2][0]=-4.628509;((float**)syn2->mat)[2][1]=-4.325458;((float**)syn2->mat)[2][2]=-1.009585;((float**)syn2->mat)[2][3]=2.172581;((float**)syn2->mat)[3][0]=-1.045445;((float**)syn2->mat)[3][1]=-0.004892;((float**)syn2->mat)[3][2]=1.504184;((float**)syn2->mat)[3][3]=-0.233437;((float**)syn2->mat)[4][0]=-2.280049;((float**)syn2->mat)[4][1]=-1.165263;((float**)syn2->mat)[4][2]=4.147265;((float**)syn2->mat)[4][3]=-6.422021;((float**)syn2->mat)[5][0]=1.158191;((float**)syn2->mat)[5][1]=-3.289140;((float**)syn2->mat)[5][2]=-2.928745;((float**)syn2->mat)[5][3]=1.563332;((float**)syn2->mat)[6][0]=-3.799554;((float**)syn2->mat)[6][1]=-3.612845;((float**)syn2->mat)[6][2]=-5.051707;((float**)syn2->mat)[6][3]=5.623632;((float**)syn2->mat)[7][0]=-5.835114;((float**)syn2->mat)[7][1]=-6.388254;((float**)syn2->mat)[7][2]=-1.212695;((float**)syn2->mat)[7][3]=3.244730;((float**)syn2->mat)[8][0]=-3.260185;((float**)syn2->mat)[8][1]=0.461693;((float**)syn2->mat)[8][2]=1.798117;((float**)syn2->mat)[8][3]=-4.065910;((float**)syn2->mat)[9][0]=1.319178;((float**)syn2->mat)[9][1]=-0.730189;((float**)syn2->mat)[9][2]=-1.106432;((float**)syn2->mat)[9][3]=0.274569;((float**)syn2->mat)[10][0]=-1.534551;((float**)syn2->mat)[10][1]=3.680777;((float**)syn2->mat)[10][2]=-4.084251;((float**)syn2->mat)[10][3]=-5.985116;((float**)syn2->mat)[11][0]=4.184460;((float**)syn2->mat)[11][1]=-5.857653;((float**)syn2->mat)[11][2]=-3.294002;((float**)syn2->mat)[11][3]=-1.027014;((float**)syn2->mat)[12][0]=-0.461145;((float**)syn2->mat)[12][1]=-0.678242;((float**)syn2->mat)[12][2]=1.022365;((float**)syn2->mat)[12][3]=0.798284;((float**)syn2->mat)[13][0]=1.035317;((float**)syn2->mat)[13][1]=-0.093845;((float**)syn2->mat)[13][2]=-0.765355;((float**)syn2->mat)[13][3]=-0.602632;((float**)syn2->mat)[14][0]=0.213142;((float**)syn2->mat)[14][1]=-6.255798;((float**)syn2->mat)[14][2]=-6.255063;((float**)syn2->mat)[14][3]=3.756855;((float**)syn2->mat)[15][0]=0.088324;((float**)syn2->mat)[15][1]=0.060564;((float**)syn2->mat)[15][2]=0.489949;((float**)syn2->mat)[15][3]=-0.152535;((float**)syn2->mat)[16][0]=-0.025030;((float**)syn2->mat)[16][1]=-0.261552;((float**)syn2->mat)[16][2]=1.468414;((float**)syn2->mat)[16][3]=-1.477012;((float**)syn2->mat)[17][0]=4.213745;((float**)syn2->mat)[17][1]=-2.474695;((float**)syn2->mat)[17][2]=-1.859632;((float**)syn2->mat)[17][3]=-3.105944;((float**)syn2->mat)[18][0]=-0.931709;((float**)syn2->mat)[18][1]=0.891448;((float**)syn2->mat)[18][2]=-0.557546;((float**)syn2->mat)[18][3]=0.769618;((float**)syn2->mat)[19][0]=-0.071873;((float**)syn2->mat)[19][1]=0.460865;((float**)syn2->mat)[19][2]=-0.486254;((float**)syn2->mat)[19][3]=0.522590;((float**)syn2->mat)[20][0]=4.513178;((float**)syn2->mat)[20][1]=-2.415314;((float**)syn2->mat)[20][2]=-2.969686;((float**)syn2->mat)[20][3]=-5.186864;((float**)syn2->mat)[21][0]=-0.692704;((float**)syn2->mat)[21][1]=3.054346;((float**)syn2->mat)[21][2]=-6.758296;((float**)syn2->mat)[21][3]=-4.078369;((float**)syn2->mat)[22][0]=-3.089108;((float**)syn2->mat)[22][1]=0.035387;((float**)syn2->mat)[22][2]=-1.068687;((float**)syn2->mat)[22][3]=2.186001;((float**)syn2->mat)[23][0]=-4.137681;((float**)syn2->mat)[23][1]=-5.440299;((float**)syn2->mat)[23][2]=2.573318;((float**)syn2->mat)[23][3]=-0.432908;((float**)syn2->mat)[24][0]=3.940788;((float**)syn2->mat)[24][1]=-1.592905;((float**)syn2->mat)[24][2]=-1.644789;((float**)syn2->mat)[24][3]=-4.190807;((float**)syn2->mat)[25][0]=0.318664;((float**)syn2->mat)[25][1]=-1.258730;((float**)syn2->mat)[25][2]=0.587427;((float**)syn2->mat)[25][3]=0.785923;((float**)syn2->mat)[26][0]=-5.919216;((float**)syn2->mat)[26][1]=3.507565;((float**)syn2->mat)[26][2]=-1.892189;((float**)syn2->mat)[26][3]=-5.239147;((float**)syn2->mat)[27][0]=-0.380133;((float**)syn2->mat)[27][1]=1.446767;((float**)syn2->mat)[27][2]=-1.293356;((float**)syn2->mat)[27][3]=-2.129871;((float**)syn2->mat)[28][0]=6.050577;((float**)syn2->mat)[28][1]=-3.905009;((float**)syn2->mat)[28][2]=-3.313271;((float**)syn2->mat)[28][3]=-5.578617;((float**)syn2->mat)[29][0]=-0.007118;((float**)syn2->mat)[29][1]=0.937712;((float**)syn2->mat)[29][2]=0.217924;((float**)syn2->mat)[29][3]=-0.538679;
+}
+void fill_matrix_circle(){
+((float**)circle->mat)[0][0]=0;((float**)circle->mat)[0][1]=0;((float**)circle->mat)[0][2]=1;((float**)circle->mat)[0][3]=-2;((float**)circle->mat)[0][4]=-3;((float**)circle->mat)[0][5]=1;((float**)circle->mat)[0][6]=0;((float**)circle->mat)[0][7]=-2;((float**)circle->mat)[0][8]=3;((float**)circle->mat)[0][9]=0;((float**)circle->mat)[0][10]=1;((float**)circle->mat)[0][11]=-3;((float**)circle->mat)[0][12]=0;((float**)circle->mat)[0][13]=0;((float**)circle->mat)[0][14]=5;((float**)circle->mat)[0][15]=6;((float**)circle->mat)[0][16]=1;((float**)circle->mat)[0][17]=0;((float**)circle->mat)[0][18]=5;((float**)circle->mat)[0][19]=0;((float**)circle->mat)[0][20]=1;((float**)circle->mat)[0][21]=1;((float**)circle->mat)[0][22]=2;((float**)circle->mat)[0][23]=-1;((float**)circle->mat)[0][24]=1;((float**)circle->mat)[0][25]=1;((float**)circle->mat)[0][26]=-1;((float**)circle->mat)[0][27]=5;((float**)circle->mat)[0][28]=3;((float**)circle->mat)[0][29]=3;((float**)circle->mat)[0][30]=0;((float**)circle->mat)[0][31]=0;((float**)circle->mat)[0][32]=-1;((float**)circle->mat)[0][33]=4;((float**)circle->mat)[0][34]=0;((float**)circle->mat)[0][35]=-1;((float**)circle->mat)[0][36]=-5;((float**)circle->mat)[0][37]=2;((float**)circle->mat)[0][38]=-2;((float**)circle->mat)[0][39]=0;((float**)circle->mat)[0][40]=1;((float**)circle->mat)[0][41]=0;((float**)circle->mat)[0][42]=0;((float**)circle->mat)[0][43]=-1;((float**)circle->mat)[0][44]=1;((float**)circle->mat)[0][45]=1;((float**)circle->mat)[0][46]=-1;((float**)circle->mat)[0][47]=0;((float**)circle->mat)[0][48]=0;((float**)circle->mat)[0][49]=2;((float**)circle->mat)[0][50]=5;((float**)circle->mat)[0][51]=2;((float**)circle->mat)[0][52]=-2;((float**)circle->mat)[0][53]=3;((float**)circle->mat)[0][54]=1;((float**)circle->mat)[0][55]=0;((float**)circle->mat)[0][56]=-1;((float**)circle->mat)[0][57]=5;((float**)circle->mat)[0][58]=5;((float**)circle->mat)[0][59]=1;((float**)circle->mat)[0][60]=0;((float**)circle->mat)[0][61]=0;((float**)circle->mat)[0][62]=-1;((float**)circle->mat)[0][63]=-7;((float**)circle->mat)[0][64]=0;((float**)circle->mat)[0][65]=-3;((float**)circle->mat)[0][66]=4;((float**)circle->mat)[0][67]=1;((float**)circle->mat)[0][68]=-2;((float**)circle->mat)[0][69]=0;((float**)circle->mat)[0][70]=4;((float**)circle->mat)[0][71]=-3;((float**)circle->mat)[0][72]=0;((float**)circle->mat)[0][73]=0;((float**)circle->mat)[0][74]=2;((float**)circle->mat)[0][75]=-2;((float**)circle->mat)[0][76]=4;((float**)circle->mat)[0][77]=-2;((float**)circle->mat)[0][78]=4;((float**)circle->mat)[0][79]=0;((float**)circle->mat)[0][80]=3;((float**)circle->mat)[0][81]=2;((float**)circle->mat)[0][82]=3;((float**)circle->mat)[0][83]=3;((float**)circle->mat)[0][84]=5;((float**)circle->mat)[0][85]=0;((float**)circle->mat)[0][86]=2;((float**)circle->mat)[0][87]=5;((float**)circle->mat)[0][88]=1;((float**)circle->mat)[0][89]=1;((float**)circle->mat)[0][90]=0;((float**)circle->mat)[0][91]=0;((float**)circle->mat)[0][92]=0;((float**)circle->mat)[0][93]=0;((float**)circle->mat)[0][94]=5;((float**)circle->mat)[0][95]=-3;((float**)circle->mat)[0][96]=1;((float**)circle->mat)[0][97]=-1;((float**)circle->mat)[0][98]=3;((float**)circle->mat)[0][99]=-4;((float**)circle->mat)[0][100]=1;((float**)circle->mat)[0][101]=0;((float**)circle->mat)[0][102]=2;((float**)circle->mat)[0][103]=3;((float**)circle->mat)[0][104]=-2;((float**)circle->mat)[0][105]=1;((float**)circle->mat)[0][106]=1;((float**)circle->mat)[0][107]=2;((float**)circle->mat)[0][108]=1;((float**)circle->mat)[0][109]=4;((float**)circle->mat)[0][110]=0;((float**)circle->mat)[0][111]=2;((float**)circle->mat)[0][112]=2;((float**)circle->mat)[0][113]=0;((float**)circle->mat)[0][114]=-1;((float**)circle->mat)[0][115]=5;((float**)circle->mat)[0][116]=0;((float**)circle->mat)[0][117]=3;((float**)circle->mat)[0][118]=3;((float**)circle->mat)[0][119]=3;((float**)circle->mat)[0][120]=0;((float**)circle->mat)[0][121]=0;((float**)circle->mat)[0][122]=-3;((float**)circle->mat)[0][123]=-4;((float**)circle->mat)[0][124]=-2;((float**)circle->mat)[0][125]=0;((float**)circle->mat)[0][126]=0;((float**)circle->mat)[0][127]=2;((float**)circle->mat)[0][128]=-1;((float**)circle->mat)[0][129]=0;((float**)circle->mat)[0][130]=-1;((float**)circle->mat)[0][131]=2;((float**)circle->mat)[0][132]=2;((float**)circle->mat)[0][133]=1;((float**)circle->mat)[0][134]=0;((float**)circle->mat)[0][135]=2;((float**)circle->mat)[0][136]=0;((float**)circle->mat)[0][137]=2;((float**)circle->mat)[0][138]=2;((float**)circle->mat)[0][139]=2;((float**)circle->mat)[0][140]=1;((float**)circle->mat)[0][141]=-3;((float**)circle->mat)[0][142]=2;((float**)circle->mat)[0][143]=-1;((float**)circle->mat)[0][144]=3;((float**)circle->mat)[0][145]=3;((float**)circle->mat)[0][146]=1;((float**)circle->mat)[0][147]=7;((float**)circle->mat)[0][148]=0;((float**)circle->mat)[0][149]=5;((float**)circle->mat)[0][150]=0;((float**)circle->mat)[0][151]=0;((float**)circle->mat)[0][152]=-4;((float**)circle->mat)[0][153]=-9;((float**)circle->mat)[0][154]=-6;((float**)circle->mat)[0][155]=-7;((float**)circle->mat)[0][156]=-8;((float**)circle->mat)[0][157]=-1;((float**)circle->mat)[0][158]=-1;((float**)circle->mat)[0][159]=0;((float**)circle->mat)[0][160]=-2;((float**)circle->mat)[0][161]=-1;((float**)circle->mat)[0][162]=1;((float**)circle->mat)[0][163]=-1;((float**)circle->mat)[0][164]=0;((float**)circle->mat)[0][165]=1;((float**)circle->mat)[0][166]=6;((float**)circle->mat)[0][167]=-1;((float**)circle->mat)[0][168]=0;((float**)circle->mat)[0][169]=0;((float**)circle->mat)[0][170]=0;((float**)circle->mat)[0][171]=0;((float**)circle->mat)[0][172]=0;((float**)circle->mat)[0][173]=4;((float**)circle->mat)[0][174]=-2;((float**)circle->mat)[0][175]=6;((float**)circle->mat)[0][176]=2;((float**)circle->mat)[0][177]=2;((float**)circle->mat)[0][178]=3;((float**)circle->mat)[0][179]=6;((float**)circle->mat)[0][180]=0;((float**)circle->mat)[0][181]=0;((float**)circle->mat)[0][182]=2;((float**)circle->mat)[0][183]=-2;((float**)circle->mat)[0][184]=4;((float**)circle->mat)[0][185]=-2;((float**)circle->mat)[0][186]=4;((float**)circle->mat)[0][187]=-4;((float**)circle->mat)[0][188]=2;((float**)circle->mat)[0][189]=0;((float**)circle->mat)[0][190]=2;((float**)circle->mat)[0][191]=-2;((float**)circle->mat)[0][192]=2;((float**)circle->mat)[0][193]=-2;((float**)circle->mat)[0][194]=0;((float**)circle->mat)[0][195]=0;((float**)circle->mat)[0][196]=0;((float**)circle->mat)[0][197]=-1;((float**)circle->mat)[0][198]=-2;((float**)circle->mat)[0][199]=0;((float**)circle->mat)[0][200]=2;((float**)circle->mat)[0][201]=3;((float**)circle->mat)[0][202]=3;((float**)circle->mat)[0][203]=2;((float**)circle->mat)[0][204]=3;((float**)circle->mat)[0][205]=1;((float**)circle->mat)[0][206]=3;((float**)circle->mat)[0][207]=2;((float**)circle->mat)[0][208]=3;((float**)circle->mat)[0][209]=0;((float**)circle->mat)[0][210]=0;((float**)circle->mat)[0][211]=0;((float**)circle->mat)[0][212]=-2;((float**)circle->mat)[0][213]=-2;((float**)circle->mat)[0][214]=-2;((float**)circle->mat)[0][215]=-4;((float**)circle->mat)[0][216]=1;((float**)circle->mat)[0][217]=-1;((float**)circle->mat)[0][218]=0;((float**)circle->mat)[0][219]=-1;((float**)circle->mat)[0][220]=0;((float**)circle->mat)[0][221]=1;((float**)circle->mat)[0][222]=-2;((float**)circle->mat)[0][223]=0;((float**)circle->mat)[0][224]=1;((float**)circle->mat)[0][225]=1;((float**)circle->mat)[0][226]=2;((float**)circle->mat)[0][227]=1;((float**)circle->mat)[0][228]=2;((float**)circle->mat)[0][229]=0;((float**)circle->mat)[0][230]=0;((float**)circle->mat)[0][231]=3;((float**)circle->mat)[0][232]=0;((float**)circle->mat)[0][233]=2;((float**)circle->mat)[0][234]=4;((float**)circle->mat)[0][235]=0;((float**)circle->mat)[0][236]=2;((float**)circle->mat)[0][237]=3;((float**)circle->mat)[0][238]=-2;((float**)circle->mat)[0][239]=3;((float**)circle->mat)[0][240]=0;((float**)circle->mat)[0][241]=0;((float**)circle->mat)[0][242]=-3;((float**)circle->mat)[0][243]=-9;((float**)circle->mat)[0][244]=-2;((float**)circle->mat)[0][245]=-7;((float**)circle->mat)[0][246]=-1;((float**)circle->mat)[0][247]=-8;((float**)circle->mat)[0][248]=-1;((float**)circle->mat)[0][249]=-5;((float**)circle->mat)[0][250]=-3;((float**)circle->mat)[0][251]=-3;((float**)circle->mat)[0][252]=0;((float**)circle->mat)[0][253]=-5;((float**)circle->mat)[0][254]=-3;((float**)circle->mat)[0][255]=-1;((float**)circle->mat)[0][256]=1;((float**)circle->mat)[0][257]=-2;((float**)circle->mat)[0][258]=0;((float**)circle->mat)[0][259]=-1;((float**)circle->mat)[0][260]=0;((float**)circle->mat)[0][261]=1;((float**)circle->mat)[0][262]=0;((float**)circle->mat)[0][263]=0;((float**)circle->mat)[0][264]=3;((float**)circle->mat)[0][265]=2;((float**)circle->mat)[0][266]=2;((float**)circle->mat)[0][267]=0;((float**)circle->mat)[0][268]=0;((float**)circle->mat)[0][269]=1;((float**)circle->mat)[0][270]=0;((float**)circle->mat)[0][271]=0;((float**)circle->mat)[0][272]=0;((float**)circle->mat)[0][273]=-4;((float**)circle->mat)[0][274]=-2;((float**)circle->mat)[0][275]=0;((float**)circle->mat)[0][276]=-3;((float**)circle->mat)[0][277]=-1;((float**)circle->mat)[0][278]=-3;((float**)circle->mat)[0][279]=0;((float**)circle->mat)[0][280]=1;((float**)circle->mat)[0][281]=0;((float**)circle->mat)[0][282]=1;((float**)circle->mat)[0][283]=0;((float**)circle->mat)[0][284]=1;((float**)circle->mat)[0][285]=0;((float**)circle->mat)[0][286]=1;((float**)circle->mat)[0][287]=3;((float**)circle->mat)[0][288]=-1;((float**)circle->mat)[0][289]=1;((float**)circle->mat)[0][290]=0;((float**)circle->mat)[0][291]=-1;((float**)circle->mat)[0][292]=0;((float**)circle->mat)[0][293]=0;((float**)circle->mat)[0][294]=3;((float**)circle->mat)[0][295]=2;((float**)circle->mat)[0][296]=5;((float**)circle->mat)[0][297]=1;((float**)circle->mat)[0][298]=3;((float**)circle->mat)[0][299]=7;
 }
 
 void fill_matrix_input_1(){
