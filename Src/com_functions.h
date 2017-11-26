@@ -1,10 +1,11 @@
 #include "stm32l4xx_hal_gpio.h"
 #define MODE_PORT GPIOC
 
-#define MODE_OUT_0 GPIO_PIN_0
-#define MODE_OUT_1 GPIO_PIN_1
+#define MODE_OUT_0 GPIO_PIN_8
+#define MODE_OUT_1 GPIO_PIN_9
 #define MODE_OUT_2 GPIO_PIN_2
 #define MODE_OUT_3 GPIO_PIN_3
+#define DATA_OUT_2 GPIO_PIN_10
 
 #define MODE_IN_0 GPIO_PIN_4
 #define MODE_IN_1 GPIO_PIN_5
@@ -15,7 +16,7 @@
 
 #define DATA_OUT_0 GPIO_PIN_0
 #define DATA_OUT_1 GPIO_PIN_1
-#define DATA_OUT_2 GPIO_PIN_2
+//#define DATA_OUT_2 GPIO_PIN_2 //Warning !
 #define DATA_OUT_3 GPIO_PIN_3
 #define DATA_OUT_4 GPIO_PIN_4
 #define DATA_OUT_5 GPIO_PIN_5
@@ -51,10 +52,10 @@
 
 void init_com();
 void send_layer_element(float layer_element);
-void read_fpga_layer_element(float temp_fpga_element);
+float read_fpga_layer_element();
 int verif_layer_element(float layer_element, float temp_fpga_element);
 void read_bits_layer(float layer_element, int Tab_bits[]);
-void load_bits_to_element(int Tab_bits[], float *temp_fpga_element);
+float load_bits_to_element(int Tab_bits[]);
 void send_STM32_L1_request();
 void send_STM32_L2_request();
 void send_verif_OK();

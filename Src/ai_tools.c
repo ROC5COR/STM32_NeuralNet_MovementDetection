@@ -364,8 +364,8 @@ uint16_t float_to_hexa(float input){
 	}
 	uint16_t int_part = floor(input);
 	uint16_t frac_part = (input - (float)int_part)*2048;
-	printf("Conversion ent(hexa):%02x ; frac(hexa):%04x\n",int_part,frac_part);
-	printf("Conversion ent(int):%u ; frac(int):%u\n",int_part,frac_part);
+	//printf("Conversion ent(hexa):%02x ; frac(hexa):%04x\n",int_part,frac_part);
+	//printf("Conversion ent(int):%u ; frac(int):%u\n",int_part,frac_part);
 
 	uint16_t total = 0x0000;
 	total |= sign<<15;
