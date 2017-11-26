@@ -50,14 +50,18 @@
 
 #define ACCELERO_I2C hi2c3
 #define SAMPLE_SIZE 102
-#define INPUT_SIZE 15
+#define INPUT_SIZE 150
 #define HIDDEN_NEURON 30
 #define TRAINING_
 #define TESTING_
 #define ACCELERO_
 #define LOUKA
+#define LOUKA2_
 #define FILTER_
 #define FPGA_COM_
+#define ACCELERO
+#define LOUKA_
+#define LOUKA2_
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -101,6 +105,7 @@ void fill_matrix_input_3();
 void fill_static_matrix_inputs();
 void fill_static_matrix_outputs();
 void fill_matrix_syn1();
+void fill_matrix_circle();
 void fill_matrix_syn2();
 
 /* USER CODE END PFP */
@@ -112,7 +117,7 @@ MAT *l2;
 MAT *syn1;
 MAT *syn2;
 MAT *input;
-MAT *input_pre_filter;
+MAT *input_filter;
 
 MAT *l1_complete;
 MAT *l2_complete;
@@ -125,6 +130,7 @@ MAT *inputsTranspose;
 
 //Training matrices (plus testing matrices)
 //MAT *inputs;
+MAT *circle;
 MAT *l2Error;
 MAT *l1Error;
 MAT *l1Temp;
@@ -145,11 +151,12 @@ float outputs[SAMPLE_SIZE][4];
 
 
 void initTestingMatrix(){
-input = createMatrix_float(1,INPUT_SIZE*2);
-input_pre_filter = createMatrix_float(1,INPUT_SIZE*2);
+	input = createMatrix_float(1,INPUT_SIZE*2);
+	input_filter = createMatrix_float(1,INPUT_SIZE*2/10);
     l1 = createMatrix_float(1,HIDDEN_NEURON);
     l2 = createMatrix_float(1,4);
     output = createMatrix_float(1,INPUT_SIZE*2);
+    circle = createMatrix_float(1,HIDDEN_NEURON*10);
 }
 void freeTestingMatrix(){
     free(input);
@@ -727,13 +734,15 @@ void filter_acc(){
 	 // i2c_startTime = HAL_GetTick();
 	  int i = 0;
 	  int j = 0;
+	  int k =1;
+	  int l=1;
 	  int16_t i2c_data[3] = {0, 0,0};
 	  int16_t i2c_data_temp[3] ={0,0,0};
 	  int16_t i2c_data_filter[1][INPUT_SIZE*2];
 	  int16_t i2c_data_pre_filter[1][INPUT_SIZE*2];
 	  int16_t i2c_data_output[1][INPUT_SIZE*2];
 	  while(i<INPUT_SIZE){
-		  while (j<10){
+		  while (j<30){
 			  getOutput(&ACCELERO_I2C,i2c_data);
 			  i2c_data_temp[0]+=i2c_data[0];
 			  i2c_data_temp[1]+=i2c_data[1];
@@ -741,8 +750,8 @@ void filter_acc(){
 
 		  }
 
-		  i2c_data_filter[0][2*i] = i2c_data_temp[0]/10.0;
-		  i2c_data_filter[0][1+2*i] = i2c_data_temp[1]/10.0;
+		  i2c_data_filter[0][2*i] = i2c_data_temp[0]/30.0;
+		  i2c_data_filter[0][1+2*i] = i2c_data_temp[1]/30.0;
 
 		  //printf("X:%d, Y:%d\n",i2c_data_filter[0][2*i],i2c_data_filter[0][1+2*i]);
 		  //((float**)input->mat)[0][2+3*i] =  ((float**)input->mat)[0][2+3*i]/10;
@@ -750,7 +759,7 @@ void filter_acc(){
 		  j=0;
 		  i2c_data_temp[0]=0;
 		  i2c_data_temp[1]=0;
-		  HAL_Delay(100);
+		  HAL_Delay(10);
 
 	  }
 	   // printf("Fin acquisition\n");
@@ -762,10 +771,12 @@ void filter_acc(){
 		i2c_data_output[0][1]=i2c_data_filter[0][1];
 
 		//printf("suppression offset\n");
-		((float**)input->mat)[0][0]=i2c_data_output[0][0];
-		((float**)input->mat)[0][1]=i2c_data_output[0][1];
+		((float**)input->mat)[0][0]=0;
+		((float**)input->mat)[0][1]=0;
+		((float**)input_filter->mat)[0][0]=0;
+		((float**)input_filter->mat)[0][1]=0;
 
-		printf("Data\n");
+		//printf("Data\n");
 		printf("%f\n",((float**)input->mat)[0][0]);
 		printf("%f\n",((float**)input->mat)[0][1]);
 
@@ -777,10 +788,18 @@ void filter_acc(){
 		  i2c_data_output[0][2*i]=i2c_data_filter[0][2*i]-i2c_data_pre_filter[0][2*i];
 		  i2c_data_output[0][1+2*i]=i2c_data_filter[0][1+2*i]-i2c_data_pre_filter[0][1+2*i];
 
+		  if (k==10) {
+			  ((float**)input_filter->mat)[0][2*l]=i2c_data_output[0][2*l];
+			  ((float**)input_filter->mat)[0][2*l+1]=i2c_data_output[0][1+2*l];
+			  k=1;
+			  l++;
+		  }
+		  k++;
+
 		  ((float**)input->mat)[0][2*i]=i2c_data_output[0][2*i];
 		  ((float**)input->mat)[0][2*i+1]=i2c_data_output[0][1+2*i];
 
-		  printf("Data\n");
+		  //printf("Data\n");
 		  printf("%f\n",((float**)input->mat)[0][2*i]);
 		  printf("%f\n",((float**)input->mat)[0][1+2*i]);
 
