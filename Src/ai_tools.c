@@ -36,7 +36,7 @@
 
 void matrixProduct_float(MAT *mat1, MAT *mat2, MAT *matOut){
     if(mat1->matN != mat2->matM){
-        printf("Error : Size won't works(%d,%d) and (%d,%d)\n",mat1->matM,mat1->matN,mat2->matM,mat2->matN);
+        printf("Error(Product) : Size won't works(%d,%d) and (%d,%d)\n",mat1->matM,mat1->matN,mat2->matM,mat2->matN);
         matOut = NULL;
         return;
     }

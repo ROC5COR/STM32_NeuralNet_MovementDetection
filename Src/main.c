@@ -50,15 +50,16 @@
 
 #define ACCELERO_I2C hi2c3
 #define SAMPLE_SIZE 102
-#define INPUT_SIZE 150
+#define INPUT_SIZE 20
+#define INPUT_SIZE_FILTER 150
 #define HIDDEN_NEURON 30
 #define TRAINING_
-#define TESTING_
+#define TESTING
 #define ACCELERO_
 #define LOUKA_
 #define FILTER_
 #define FPGA_COM_
-#define ACCELERO
+#define ACCELERO_
 #define COMMUNICATION_
 
 /* USER CODE END Includes */
@@ -150,8 +151,8 @@ float outputs[SAMPLE_SIZE][4];
 
 
 void initTestingMatrix(){
-	input = createMatrix_float(1,INPUT_SIZE*2);
-	input_filter = createMatrix_float(1,INPUT_SIZE*2/10);
+	input = createMatrix_float(1,INPUT_SIZE);
+	input_filter = createMatrix_float(1,INPUT_SIZE_FILTER*2);
     l1 = createMatrix_float(1,HIDDEN_NEURON);
     l2 = createMatrix_float(1,4);
     output = createMatrix_float(1,INPUT_SIZE*2);
@@ -244,7 +245,7 @@ void train_solo(){
         ((VAR**)input->mat)[0] = inputs[i];
 
         //input->matN = inputs->matN;
-        input->matN = 20; // TODO : to change
+        input->matN = 30;
         input->matM = 1;
 
         ((VAR**)output->mat)[0] = outputs[i];
@@ -541,14 +542,16 @@ int main(void)
 	  fill_matrix_syn2();
 #endif
 #endif
+
 #ifdef TESTING
 	  printf("testing\n");
 	  initTestingMatrix();
-    
+
 	  fill_matrix_input_1();
-	  startTime = HAL_GetTick();
+	  uint32_t startTime = HAL_GetTick();
 	  performComputation();
-	  endTime = HAL_GetTick();
+	  uint32_t endTime = HAL_GetTick();
+
 	  printMatrix(l2,(char*)"Results 1 : ");
 	  printf("DeltaTick : %ld\n",endTime-startTime);
 
@@ -565,8 +568,6 @@ int main(void)
 	  printMatrix(l2,(char*)"Results 4 : ");
 
 	  freeTestingMatrix();
-
-	  testLayerCom();
 
 #endif
 #ifdef TRAINING
@@ -737,10 +738,10 @@ void filter_acc(){
 	  int l=1;
 	  int16_t i2c_data[3] = {0, 0,0};
 	  int16_t i2c_data_temp[3] ={0,0,0};
-	  int16_t i2c_data_filter[1][INPUT_SIZE*2];
-	  int16_t i2c_data_pre_filter[1][INPUT_SIZE*2];
-	  int16_t i2c_data_output[1][INPUT_SIZE*2];
-	  while(i<INPUT_SIZE){
+	  int16_t i2c_data_filter[1][INPUT_SIZE_FILTER*2];
+	  int16_t i2c_data_pre_filter[1][INPUT_SIZE_FILTER*2];
+	  int16_t i2c_data_output[1][INPUT_SIZE_FILTER*2];
+	  while(i<INPUT_SIZE_FILTER){
 		  while (j<30){
 			  getOutput(&ACCELERO_I2C,i2c_data);
 			  i2c_data_temp[0]+=i2c_data[0];
@@ -770,16 +771,16 @@ void filter_acc(){
 		i2c_data_output[0][1]=i2c_data_filter[0][1];
 
 		//printf("suppression offset\n");
-		((float**)input->mat)[0][0]=0;
-		((float**)input->mat)[0][1]=0;
+		//((float**)input->mat)[0][0]=0;
+		//((float**)input->mat)[0][1]=0;
 		((float**)input_filter->mat)[0][0]=0;
 		((float**)input_filter->mat)[0][1]=0;
 
 		//printf("Data\n");
-		printf("%f\n",((float**)input->mat)[0][0]);
-		printf("%f\n",((float**)input->mat)[0][1]);
+		printf("%f\n",((float**)input_filter->mat)[0][0]);
+		printf("%f\n",((float**)input_filter->mat)[0][1]);
 
-		for(i=1;i<INPUT_SIZE;i++){
+		for(i=1;i<INPUT_SIZE_FILTER;i++){
 
 		  i2c_data_pre_filter[0][2*i]=i2c_data_filter[0][2*i]*0.1+i2c_data_pre_filter[0][2*(i-1)]*0.9;
 		  i2c_data_pre_filter[0][1+2*i]=i2c_data_filter[0][1+2*i]*0.1+i2c_data_pre_filter[0][1+2*(i-1)]*0.9;
@@ -787,20 +788,20 @@ void filter_acc(){
 		  i2c_data_output[0][2*i]=i2c_data_filter[0][2*i]-i2c_data_pre_filter[0][2*i];
 		  i2c_data_output[0][1+2*i]=i2c_data_filter[0][1+2*i]-i2c_data_pre_filter[0][1+2*i];
 
-		  if (k==10) {
+		  /*if (k==10) {
 			  ((float**)input_filter->mat)[0][2*l]=i2c_data_output[0][2*l];
 			  ((float**)input_filter->mat)[0][2*l+1]=i2c_data_output[0][1+2*l];
 			  k=1;
 			  l++;
-		  }
-		  k++;
+		  }*
+		  k++;*/
 
-		  ((float**)input->mat)[0][2*i]=i2c_data_output[0][2*i];
-		  ((float**)input->mat)[0][2*i+1]=i2c_data_output[0][1+2*i];
+		  ((float**)input_filter->mat)[0][2*i]=i2c_data_output[0][2*i];
+		  ((float**)input_filter->mat)[0][2*i+1]=i2c_data_output[0][1+2*i];
 
 		  //printf("Data\n");
-		  printf("%f\n",((float**)input->mat)[0][2*i]);
-		  printf("%f\n",((float**)input->mat)[0][1+2*i]);
+		  printf("%f\n",((float**)input_filter->mat)[0][2*i]);
+		  printf("%f\n",((float**)input_filter->mat)[0][1+2*i]);
 
 
 	  }
