@@ -59,8 +59,6 @@
 #define FILTER_
 #define FPGA_COM_
 #define ACCELERO
-#define LOUKA2_
-#define ALEX_
 #define COMMUNICATION_
 
 /* USER CODE END Includes */
