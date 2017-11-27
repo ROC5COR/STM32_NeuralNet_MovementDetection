@@ -29,7 +29,7 @@ void init_com()
 	/*Initialisation des sorties pour MODE*/
 	GPIO_InitTypeDef GPIO_InitStructureModeOut;
 	//__HAL_RCC_GPIOC_CLK_ENABLE();
-	GPIO_InitStructureModeOut.Pin = MODE_OUT_0 | MODE_OUT_1 | MODE_OUT_2 | MODE_OUT_3;
+	GPIO_InitStructureModeOut.Pin = MODE_OUT_0 | MODE_OUT_1 | MODE_OUT_2 | MODE_OUT_3 | DATA_OUT_2;
 	GPIO_InitStructureModeOut.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStructureModeOut.Pull = GPIO_NOPULL;
 	HAL_GPIO_Init(MODE_PORT, &GPIO_InitStructureModeOut);
@@ -64,7 +64,11 @@ void send_layer_element(float layer_element)
 {
 	int Tab_bits[16];
 
-	read_bits_layer(layer_element, Tab_bits) ;
+	read_bits_layer(layer_element, Tab_bits);
+	for(int i = 0; i < 16;i++){
+		printf("%d,",Tab_bits[i]);
+	}
+	printf("\n");
 
 	if(Tab_bits[0]==1){
 		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_0, GPIO_PIN_SET);
@@ -77,9 +81,9 @@ void send_layer_element(float layer_element)
 		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_1, GPIO_PIN_RESET);
 	}
 	if(Tab_bits[2]==1){
-		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_2, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOC, DATA_OUT_2, GPIO_PIN_SET);//Bug fix
 	}else{
-		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_2, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOC, DATA_OUT_2, GPIO_PIN_RESET);
 	}
 	if(Tab_bits[3]==1){
 		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_3, GPIO_PIN_SET);
@@ -150,10 +154,9 @@ void send_layer_element(float layer_element)
 
 
 
-void read_fpga_layer_element(float temp_fpga_element)
+float read_fpga_layer_element()
 {
 	int Tab_bits[16];
-
 	Tab_bits[0]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_0);
 	Tab_bits[1]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_1);
 	Tab_bits[2]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_2);
@@ -171,7 +174,11 @@ void read_fpga_layer_element(float temp_fpga_element)
 	Tab_bits[14]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_14);
 	Tab_bits[15]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_15);
 
-	load_bits_to_element(Tab_bits, &temp_fpga_element);
+	for(int i = 0; i < 16; i++){
+		printf("%d,",Tab_bits[i]);
+	}
+	printf("\n");
+	return load_bits_to_element(Tab_bits);
 
 
 }
@@ -204,6 +211,7 @@ void read_bits_layer(float input, int Tab_bits[])
 	int sign = 0x0;
 	if(input < 0){
 		sign = 0x1;
+		input = - input;
 	}
 	uint16_t int_part = floor(input);
 	uint16_t frac_part = (input - (float)int_part)*2048;
@@ -214,28 +222,28 @@ void read_bits_layer(float input, int Tab_bits[])
 	total |= sign<<15;
 	total |= int_part<<11;
 	total |= frac_part;
-	printf("Total (hexa): %05x ; Total(int):%d\n",total,total);
+	//printf("Variable sent on pins (hexa): %05x ; Total(int):%d\n",total,total);
 
 	int i=0;
-	for (i=0;i==15;i++){
+	for (i=0;i<16;i++){
 		//Tab_bits[i]=(layer_element & (1<<i)) >> i;
-		Tab_bits[i] = total & (1<<i);
+		Tab_bits[i] = (total & (1<<i))>>i;
 	}
 }
 
 
-void load_bits_to_element(int Tab_bits[16], float *temp_fpga_element)
+float load_bits_to_element(int Tab_bits[16])
 {
 
 	uint16_t integer_part = Tab_bits[14]<<3 | Tab_bits[13]<<2 | Tab_bits[12]<<1 | Tab_bits[11]<<0;
 	uint16_t fracionnal_part = Tab_bits[10]<<10 | Tab_bits[9]<<9 | Tab_bits[8]<<8 | Tab_bits[7]<<7 | Tab_bits[6]<<6 | Tab_bits[5]<<5 | Tab_bits[4]<<4 | Tab_bits[3]<<3 | Tab_bits[2]<<2 | Tab_bits[1]<<1 | Tab_bits[0]<<0;
-	printf("integer_part : %d ; fractionnal_part : %d\n",integer_part,fracionnal_part);
+	//printf("integer_part : %d ; fractionnal_part : %d\n",integer_part,fracionnal_part);
 	float float_total = (float)integer_part+((float)fracionnal_part/2048);
 	if(Tab_bits[15] == 1){
 		float_total = - float_total;
 	}
-
-	*temp_fpga_element = float_total;
+	printf("Variable read from pins : %f\n",float_total);
+	return float_total;
 }
 
 void send_STM32_L1_request()
@@ -321,11 +329,13 @@ void reset_all_Data_outputs()
 void init_LAYER1(float layer1[][75]){
 	int i=0;
 	int j=0;
-	for (i=0;i==20;i++)
+	float cpt = -15.0;
+	for (i=0;i<20;i++)
 	{
-		for (j=0;j==75;j++)
+		for (j=0;j<75;j++)
 		{
-			layer1[i][j]+=1;
+			layer1[i][j] = 1;
+			cpt = cpt + 0.1;
 		}
 	}
 }
