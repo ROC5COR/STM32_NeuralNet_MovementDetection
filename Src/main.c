@@ -54,10 +54,10 @@
 #define HIDDEN_NEURON 30
 #define TRAINING_
 #define TESTING_
-#define ACCELERO
-#define LOUKA_
+#define ACCELERO_
+#define LOUKA
 #define LOUKA2_
-#define ALEX
+#define ALEX_
 #define COMMUNICATION_
 /* USER CODE END Includes */
 
@@ -420,12 +420,12 @@ int main(void)
 
 #ifdef LOUKA
 	  MAT *loukaInput = createMatrix_float(1,20);
-	  ((float**)loukaInput->mat)[0][0] = 0.766;
-	  ((float**)loukaInput->mat)[0][1] = 0.887;
-	  ((float**)loukaInput->mat)[0][2] = 0.974;
-	  ((float**)loukaInput->mat)[0][3] = 0.407;
+	  ((float**)loukaInput->mat)[0][0] = 0.25;
+	  ((float**)loukaInput->mat)[0][1] = 0.2;
+	  ((float**)loukaInput->mat)[0][2] = 0.11;
+	  ((float**)loukaInput->mat)[0][3] = 0.347;
 	  ((float**)loukaInput->mat)[0][4] = 0.381;
-	  ((float**)loukaInput->mat)[0][5] = 0.073;
+	  ((float**)loukaInput->mat)[0][5] = 0.9;
 	  ((float**)loukaInput->mat)[0][6] = 0.351;
 	  ((float**)loukaInput->mat)[0][7] = 0.010;
 	  ((float**)loukaInput->mat)[0][8] = 0.493;
@@ -438,8 +438,8 @@ int main(void)
 	  ((float**)loukaInput->mat)[0][15] = 0.212;
 	  ((float**)loukaInput->mat)[0][16] = 0.020;
 	  ((float**)loukaInput->mat)[0][17] = 0.652;
-	  ((float**)loukaInput->mat)[0][18] = 0.163;
-	  ((float**)loukaInput->mat)[0][19] = 0.177;
+	  ((float**)loukaInput->mat)[0][18] = 0.82;
+	  ((float**)loukaInput->mat)[0][19] = 0.23;
 
 
 	  MAT *loukaLayer = createMatrix_float(20,1);
