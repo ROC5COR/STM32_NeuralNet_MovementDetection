@@ -51,10 +51,11 @@
 #define ACCELERO_I2C hi2c3
 #define SAMPLE_SIZE 102
 #define INPUT_SIZE 20
+#define OUTPUT_SIZE 4
 #define INPUT_SIZE_FILTER 150
 #define HIDDEN_NEURON 30
-#define TRAINING_
-#define TESTING
+#define TRAINING
+#define TESTING_
 #define ACCELERO_
 #define LOUKA_
 #define FILTER_
@@ -105,7 +106,6 @@ void fill_matrix_input_3();
 void fill_static_matrix_inputs();
 void fill_static_matrix_outputs();
 void fill_matrix_syn1();
-void fill_matrix_circle();
 void fill_matrix_syn2();
 
 /* USER CODE END PFP */
@@ -143,8 +143,8 @@ MAT *output;
 //MAT *outputs;
 
 #ifdef TRAINING
-float inputs[SAMPLE_SIZE][20];
-float outputs[SAMPLE_SIZE][4];
+float inputs[SAMPLE_SIZE][INPUT_SIZE];
+float outputs[SAMPLE_SIZE][OUTPUT_SIZE];
 #endif
 
 
@@ -154,8 +154,8 @@ void initTestingMatrix(){
 	input = createMatrix_float(1,INPUT_SIZE);
 	input_filter = createMatrix_float(1,INPUT_SIZE_FILTER*2);
     l1 = createMatrix_float(1,HIDDEN_NEURON);
-    l2 = createMatrix_float(1,4);
-    output = createMatrix_float(1,INPUT_SIZE*2);
+    l2 = createMatrix_float(1,OUTPUT_SIZE);
+    output = createMatrix_float(1,OUTPUT_SIZE);
     circle = createMatrix_float(1,HIDDEN_NEURON*10);
 }
 void freeTestingMatrix(){
@@ -167,18 +167,18 @@ void freeTestingMatrix(){
 void initTrainingSoloMatrix(){
 	//inputs = createMatrix_float(120,20);
 	//outputs = createMatrix_float(120,4);
-    input = createMatrix_float(1,20);
-    inputTranspose = createMatrix_float(20,1);
-    syn1Temp = createMatrix_float(20,HIDDEN_NEURON);
+    input = createMatrix_float(1,INPUT_SIZE);
+    inputTranspose = createMatrix_float(INPUT_SIZE,1);
+    syn1Temp = createMatrix_float(INPUT_SIZE,HIDDEN_NEURON);
     l1 = createMatrix_float(1,HIDDEN_NEURON);
     l1Error = createMatrix_float(1,HIDDEN_NEURON);
     l1Transpose = createMatrix_float(HIDDEN_NEURON,1);
     l1Temp = createMatrix_float(1,HIDDEN_NEURON);
-    syn2Transpose = createMatrix_float(4,HIDDEN_NEURON);
-    syn2Temp = createMatrix_float(HIDDEN_NEURON,4);
-    l2 = createMatrix_float(1,4);
-    l2Error = createMatrix_float(1,4);
-    output = createMatrix_float(1,4);
+    syn2Transpose = createMatrix_float(OUTPUT_SIZE,HIDDEN_NEURON);
+    syn2Temp = createMatrix_float(HIDDEN_NEURON,OUTPUT_SIZE);
+    l2 = createMatrix_float(1,OUTPUT_SIZE);
+    l2Error = createMatrix_float(1,OUTPUT_SIZE);
+    output = createMatrix_float(1,OUTPUT_SIZE);
 }
 void freeTrainingSoloMatrix(){
     free(input);
@@ -245,7 +245,7 @@ void train_solo(){
         ((VAR**)input->mat)[0] = inputs[i];
 
         //input->matN = inputs->matN;
-        input->matN = 30;
+        input->matN = 20;
         input->matM = 1;
 
         ((VAR**)output->mat)[0] = outputs[i];
@@ -499,6 +499,7 @@ int main(void)
 	  fill_static_matrix_inputs();
 	  fill_static_matrix_outputs();
 
+	  uint32_t startTime = HAL_GetTick();
 	  for(int epochs = 0; epochs < 100; epochs++){
 		  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 		  train_solo();
@@ -509,7 +510,7 @@ int main(void)
 		  //printMatrix_float(syn2,(char*)"syn2");
 		  //getchar();
 	  }
-	  endTime = HAL_GetTick();
+	  uint32_t endTime = HAL_GetTick();
 
 	  printf("StartTime : \t%ld\n",startTime);
 	  printf("EndTime : \t%ld\n",endTime);
@@ -734,8 +735,8 @@ void filter_acc(){
 	 // i2c_startTime = HAL_GetTick();
 	  int i = 0;
 	  int j = 0;
-	  int k =1;
-	  int l=1;
+	  //int k =1;
+	  //int l=1;
 	  int16_t i2c_data[3] = {0, 0,0};
 	  int16_t i2c_data_temp[3] ={0,0,0};
 	  int16_t i2c_data_filter[1][INPUT_SIZE_FILTER*2];
