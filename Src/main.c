@@ -56,11 +56,10 @@
 #define TESTING_
 #define ACCELERO_
 #define LOUKA_
-#define FILTER_
+#define FILTER
 #define FPGA_COM_
 #define ACCELERO
 #define LOUKA2_
-#define ALEX_
 #define COMMUNICATION_
 
 /* USER CODE END Includes */
@@ -735,15 +734,15 @@ void filter_acc(){
 	 // i2c_startTime = HAL_GetTick();
 	  int i = 0;
 	  int j = 0;
-	  int k =1;
-	  int l=1;
+//	  int k =1;
+//	  int l=1;
 	  int16_t i2c_data[3] = {0, 0,0};
 	  int16_t i2c_data_temp[3] ={0,0,0};
 	  int16_t i2c_data_filter[1][INPUT_SIZE*2];
 	  int16_t i2c_data_pre_filter[1][INPUT_SIZE*2];
 	  int16_t i2c_data_output[1][INPUT_SIZE*2];
 	  while(i<INPUT_SIZE){
-		  while (j<30){
+		  while (j<20){
 			  getOutput(&ACCELERO_I2C,i2c_data);
 			  i2c_data_temp[0]+=i2c_data[0];
 			  i2c_data_temp[1]+=i2c_data[1];
@@ -751,8 +750,8 @@ void filter_acc(){
 
 		  }
 
-		  i2c_data_filter[0][2*i] = i2c_data_temp[0]/30.0;
-		  i2c_data_filter[0][1+2*i] = i2c_data_temp[1]/30.0;
+		  i2c_data_filter[0][2*i] = i2c_data_temp[0]/20.0;
+		  i2c_data_filter[0][1+2*i] = i2c_data_temp[1]/20.0;
 
 		  //printf("X:%d, Y:%d\n",i2c_data_filter[0][2*i],i2c_data_filter[0][1+2*i]);
 		  //((float**)input->mat)[0][2+3*i] =  ((float**)input->mat)[0][2+3*i]/10;
@@ -789,13 +788,14 @@ void filter_acc(){
 		  i2c_data_output[0][2*i]=i2c_data_filter[0][2*i]-i2c_data_pre_filter[0][2*i];
 		  i2c_data_output[0][1+2*i]=i2c_data_filter[0][1+2*i]-i2c_data_pre_filter[0][1+2*i];
 
-		  if (k==10) {
-			  ((float**)input_filter->mat)[0][2*l]=i2c_data_output[0][2*l];
-			  ((float**)input_filter->mat)[0][2*l+1]=i2c_data_output[0][1+2*l];
-			  k=1;
-			  l++;
-		  }
-		  k++;
+//		  if (k==10) {
+//
+//			  ((float**)input_filter->mat)[0][2*l]=i2c_data_output[0][2*l];
+//			  ((float**)input_filter->mat)[0][2*l+1]=i2c_data_output[0][1+2*l];
+//			  k=1;
+//			  l++;
+//		  }
+//		  k++;
 
 		  ((float**)input->mat)[0][2*i]=i2c_data_output[0][2*i];
 		  ((float**)input->mat)[0][2*i+1]=i2c_data_output[0][1+2*i];
