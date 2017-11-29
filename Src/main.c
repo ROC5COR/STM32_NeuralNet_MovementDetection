@@ -58,8 +58,7 @@
 #define LOUKA_
 #define FILTER
 #define FPGA_COM_
-#define ACCELERO
-#define LOUKA2_
+#define ACCELERO_
 #define COMMUNICATION_
 
 /* USER CODE END Includes */
@@ -143,19 +142,19 @@ MAT *output;
 //MAT *outputs;
 
 #ifdef TRAINING
-float inputs[SAMPLE_SIZE][20];
-float outputs[SAMPLE_SIZE][4];
+float inputs[SAMPLE_SIZE][INPUT_SIZE];
+float outputs[SAMPLE_SIZE][OUTPUT_SIZE];
 #endif
 
 
 
 
 void initTestingMatrix(){
-	input = createMatrix_float(1,INPUT_SIZE*2);
-	input_filter = createMatrix_float(1,INPUT_SIZE*2/10);
+	input = createMatrix_float(1,INPUT_SIZE);
+	input_filter = createMatrix_float(1,INPUT_SIZE_FILTER*2);
     l1 = createMatrix_float(1,HIDDEN_NEURON);
-    l2 = createMatrix_float(1,4);
-    output = createMatrix_float(1,INPUT_SIZE*2);
+    l2 = createMatrix_float(1,OUTPUT_SIZE);
+    output = createMatrix_float(1,OUTPUT_SIZE);
     circle = createMatrix_float(1,HIDDEN_NEURON*10);
 }
 void freeTestingMatrix(){
@@ -167,18 +166,18 @@ void freeTestingMatrix(){
 void initTrainingSoloMatrix(){
 	//inputs = createMatrix_float(120,20);
 	//outputs = createMatrix_float(120,4);
-    input = createMatrix_float(1,20);
-    inputTranspose = createMatrix_float(20,1);
-    syn1Temp = createMatrix_float(20,HIDDEN_NEURON);
+    input = createMatrix_float(1,INPUT_SIZE);
+    inputTranspose = createMatrix_float(INPUT_SIZE,1);
+    syn1Temp = createMatrix_float(INPUT_SIZE,HIDDEN_NEURON);
     l1 = createMatrix_float(1,HIDDEN_NEURON);
     l1Error = createMatrix_float(1,HIDDEN_NEURON);
     l1Transpose = createMatrix_float(HIDDEN_NEURON,1);
     l1Temp = createMatrix_float(1,HIDDEN_NEURON);
-    syn2Transpose = createMatrix_float(4,HIDDEN_NEURON);
-    syn2Temp = createMatrix_float(HIDDEN_NEURON,4);
-    l2 = createMatrix_float(1,4);
-    l2Error = createMatrix_float(1,4);
-    output = createMatrix_float(1,4);
+    syn2Transpose = createMatrix_float(OUTPUT_SIZE,HIDDEN_NEURON);
+    syn2Temp = createMatrix_float(HIDDEN_NEURON,OUTPUT_SIZE);
+    l2 = createMatrix_float(1,OUTPUT_SIZE);
+    l2Error = createMatrix_float(1,OUTPUT_SIZE);
+    output = createMatrix_float(1,OUTPUT_SIZE);
 }
 void freeTrainingSoloMatrix(){
     free(input);
@@ -245,7 +244,7 @@ void train_solo(){
         ((VAR**)input->mat)[0] = inputs[i];
 
         //input->matN = inputs->matN;
-        input->matN = 20; // TODO : to change
+        input->matN = 20;
         input->matM = 1;
 
         ((VAR**)output->mat)[0] = outputs[i];
@@ -499,6 +498,7 @@ int main(void)
 	  fill_static_matrix_inputs();
 	  fill_static_matrix_outputs();
 
+	  uint32_t startTime = HAL_GetTick();
 	  for(int epochs = 0; epochs < 100; epochs++){
 		  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 		  train_solo();
@@ -509,7 +509,7 @@ int main(void)
 		  //printMatrix_float(syn2,(char*)"syn2");
 		  //getchar();
 	  }
-	  endTime = HAL_GetTick();
+	  uint32_t endTime = HAL_GetTick();
 
 	  printf("StartTime : \t%ld\n",startTime);
 	  printf("EndTime : \t%ld\n",endTime);
@@ -542,14 +542,16 @@ int main(void)
 	  fill_matrix_syn2();
 #endif
 #endif
+
 #ifdef TESTING
 	  printf("testing\n");
 	  initTestingMatrix();
-    
+
 	  fill_matrix_input_1();
-	  startTime = HAL_GetTick();
+	  uint32_t startTime = HAL_GetTick();
 	  performComputation();
-	  endTime = HAL_GetTick();
+	  uint32_t endTime = HAL_GetTick();
+
 	  printMatrix(l2,(char*)"Results 1 : ");
 	  printf("DeltaTick : %ld\n",endTime-startTime);
 
@@ -566,8 +568,6 @@ int main(void)
 	  printMatrix(l2,(char*)"Results 4 : ");
 
 	  freeTestingMatrix();
-
-	  testLayerCom();
 
 #endif
 #ifdef TRAINING
@@ -734,15 +734,15 @@ void filter_acc(){
 	 // i2c_startTime = HAL_GetTick();
 	  int i = 0;
 	  int j = 0;
-//	  int k =1;
-//	  int l=1;
+	  //int k =1;
+	  //int l=1;
 	  int16_t i2c_data[3] = {0, 0,0};
 	  int16_t i2c_data_temp[3] ={0,0,0};
-	  int16_t i2c_data_filter[1][INPUT_SIZE*2];
-	  int16_t i2c_data_pre_filter[1][INPUT_SIZE*2];
-	  int16_t i2c_data_output[1][INPUT_SIZE*2];
-	  while(i<INPUT_SIZE){
-		  while (j<20){
+	  int16_t i2c_data_filter[1][INPUT_SIZE_FILTER*2];
+	  int16_t i2c_data_pre_filter[1][INPUT_SIZE_FILTER*2];
+	  int16_t i2c_data_output[1][INPUT_SIZE_FILTER*2];
+	  while(i<INPUT_SIZE_FILTER){
+		  while (j<30){
 			  getOutput(&ACCELERO_I2C,i2c_data);
 			  i2c_data_temp[0]+=i2c_data[0];
 			  i2c_data_temp[1]+=i2c_data[1];
@@ -750,8 +750,8 @@ void filter_acc(){
 
 		  }
 
-		  i2c_data_filter[0][2*i] = i2c_data_temp[0]/20.0;
-		  i2c_data_filter[0][1+2*i] = i2c_data_temp[1]/20.0;
+		  i2c_data_filter[0][2*i] = i2c_data_temp[0]/30.0;
+		  i2c_data_filter[0][1+2*i] = i2c_data_temp[1]/30.0;
 
 		  //printf("X:%d, Y:%d\n",i2c_data_filter[0][2*i],i2c_data_filter[0][1+2*i]);
 		  //((float**)input->mat)[0][2+3*i] =  ((float**)input->mat)[0][2+3*i]/10;
@@ -771,16 +771,16 @@ void filter_acc(){
 		i2c_data_output[0][1]=i2c_data_filter[0][1];
 
 		//printf("suppression offset\n");
-		((float**)input->mat)[0][0]=0;
-		((float**)input->mat)[0][1]=0;
+		//((float**)input->mat)[0][0]=0;
+		//((float**)input->mat)[0][1]=0;
 		((float**)input_filter->mat)[0][0]=0;
 		((float**)input_filter->mat)[0][1]=0;
 
 		//printf("Data\n");
-		printf("%f\n",((float**)input->mat)[0][0]);
-		printf("%f\n",((float**)input->mat)[0][1]);
+		printf("%f\n",((float**)input_filter->mat)[0][0]);
+		printf("%f\n",((float**)input_filter->mat)[0][1]);
 
-		for(i=1;i<INPUT_SIZE;i++){
+		for(i=1;i<INPUT_SIZE_FILTER;i++){
 
 		  i2c_data_pre_filter[0][2*i]=i2c_data_filter[0][2*i]*0.1+i2c_data_pre_filter[0][2*(i-1)]*0.9;
 		  i2c_data_pre_filter[0][1+2*i]=i2c_data_filter[0][1+2*i]*0.1+i2c_data_pre_filter[0][1+2*(i-1)]*0.9;
@@ -788,21 +788,13 @@ void filter_acc(){
 		  i2c_data_output[0][2*i]=i2c_data_filter[0][2*i]-i2c_data_pre_filter[0][2*i];
 		  i2c_data_output[0][1+2*i]=i2c_data_filter[0][1+2*i]-i2c_data_pre_filter[0][1+2*i];
 
-//		  if (k==10) {
-//
-//			  ((float**)input_filter->mat)[0][2*l]=i2c_data_output[0][2*l];
-//			  ((float**)input_filter->mat)[0][2*l+1]=i2c_data_output[0][1+2*l];
-//			  k=1;
-//			  l++;
-//		  }
-//		  k++;
 
-		  ((float**)input->mat)[0][2*i]=i2c_data_output[0][2*i];
-		  ((float**)input->mat)[0][2*i+1]=i2c_data_output[0][1+2*i];
+		  ((float**)input_filter->mat)[0][2*i]=i2c_data_output[0][2*i];
+		  ((float**)input_filter->mat)[0][2*i+1]=i2c_data_output[0][1+2*i];
 
 		  //printf("Data\n");
-		  printf("%f\n",((float**)input->mat)[0][2*i]);
-		  printf("%f\n",((float**)input->mat)[0][1+2*i]);
+		  printf("%f\n",((float**)input_filter->mat)[0][2*i]);
+		  printf("%f\n",((float**)input_filter->mat)[0][1+2*i]);
 
 
 	  }
