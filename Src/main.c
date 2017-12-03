@@ -50,15 +50,16 @@
 
 #define ACCELERO_I2C hi2c3
 #define SAMPLE_SIZE 102
-#define INPUT_SIZE 150
+#define INPUT_SIZE 20
+#define OUTPUT_SIZE 4
+#define INPUT_SIZE_FILTER 150
 #define HIDDEN_NEURON 30
 #define TRAINING_
 #define TESTING_
-#define ACCELERO_
+#define ACCELERO
 #define LOUKA_
 #define FILTER
 #define FPGA_COM_
-#define ACCELERO_
 #define COMMUNICATION_
 
 /* USER CODE END Includes */
@@ -104,7 +105,6 @@ void fill_matrix_input_3();
 void fill_static_matrix_inputs();
 void fill_static_matrix_outputs();
 void fill_matrix_syn1();
-void fill_matrix_circle();
 void fill_matrix_syn2();
 
 /* USER CODE END PFP */
@@ -584,6 +584,7 @@ while (1)
  {
 	if (HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_13) == GPIO_PIN_RESET){
 #ifdef FILTER
+	  HAL_Delay(100);
 	  filter_acc();
 #endif
 
@@ -734,13 +735,14 @@ void filter_acc(){
 	 // i2c_startTime = HAL_GetTick();
 	  int i = 0;
 	  int j = 0;
-	  //int k =1;
-	  //int l=1;
+
 	  int16_t i2c_data[3] = {0, 0,0};
 	  int16_t i2c_data_temp[3] ={0,0,0};
+
 	  int16_t i2c_data_filter[1][INPUT_SIZE_FILTER*2];
 	  int16_t i2c_data_pre_filter[1][INPUT_SIZE_FILTER*2];
 	  int16_t i2c_data_output[1][INPUT_SIZE_FILTER*2];
+
 	  while(i<INPUT_SIZE_FILTER){
 		  while (j<30){
 			  getOutput(&ACCELERO_I2C,i2c_data);
@@ -782,11 +784,14 @@ void filter_acc(){
 
 		for(i=1;i<INPUT_SIZE_FILTER;i++){
 
-		  i2c_data_pre_filter[0][2*i]=i2c_data_filter[0][2*i]*0.1+i2c_data_pre_filter[0][2*(i-1)]*0.9;
-		  i2c_data_pre_filter[0][1+2*i]=i2c_data_filter[0][1+2*i]*0.1+i2c_data_pre_filter[0][1+2*(i-1)]*0.9;
+//		  i2c_data_pre_filter[0][2*i]=i2c_data_filter[0][2*i]*0.1+i2c_data_pre_filter[0][2*(i-1)]*0.9;
+//		  i2c_data_pre_filter[0][1+2*i]=i2c_data_filter[0][1+2*i]*0.1+i2c_data_pre_filter[0][1+2*(i-1)]*0.9;
+//
+//		  i2c_data_output[0][2*i]=i2c_data_filter[0][2*i]-i2c_data_pre_filter[0][2*i];
+//		  i2c_data_output[0][1+2*i]=i2c_data_filter[0][1+2*i]-i2c_data_pre_filter[0][1+2*i];
 
-		  i2c_data_output[0][2*i]=i2c_data_filter[0][2*i]-i2c_data_pre_filter[0][2*i];
-		  i2c_data_output[0][1+2*i]=i2c_data_filter[0][1+2*i]-i2c_data_pre_filter[0][1+2*i];
+			i2c_data_output[0][2*i]=i2c_data_filter[0][2*i]*0.1+i2c_data_output[0][2*(i-1)]*0.9;
+			i2c_data_output[0][1+2*i]=i2c_data_filter[0][1+2*i]*0.1+i2c_data_output[0][1+2*(i-1)]*0.9;
 
 
 		  ((float**)input_filter->mat)[0][2*i]=i2c_data_output[0][2*i];
