@@ -57,10 +57,10 @@ void init_com()
 }
 
 /**
- * @brief Envoi d'un �l�ment de LAYER1 ou LAYER2 au FPGA
+ * @brief Envoi d'un element de INPUT au FPGA
  * @details
  */
-void send_layer_element(float layer_element)
+void send_input_element(float layer_element)
 {
 	int Tab_bits[16];
 
@@ -154,7 +154,7 @@ void send_layer_element(float layer_element)
 
 
 
-float read_fpga_layer_element()
+float read_fpga_input_element()
 {
 	int Tab_bits[16];
 	Tab_bits[0]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_0);
@@ -190,10 +190,10 @@ float read_fpga_layer_element()
  * et l'�l�ment pr�c�demment envoy�
  * @param LAYER � v�rifier
  */
-int verif_layer_element(float layer_element, float temp_fpga_element)
+int verif_input_element(float input_element, float temp_fpga_element)
 {
 	int verif=0;
-	if (layer_element!=temp_fpga_element)
+	if (input_element!=temp_fpga_element)
 	{
 		verif=0;
 	}else {
@@ -246,7 +246,7 @@ float load_bits_to_element(int Tab_bits[16])
 	return float_total;
 }
 
-void send_STM32_L1_request()
+void send_STM32_Input_request()
 {
 	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_0, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_1, GPIO_PIN_RESET);
@@ -254,13 +254,21 @@ void send_STM32_L1_request()
 	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_3, GPIO_PIN_RESET);
 }
 
-void send_STM32_L2_request()
+void send_ack_STM32()
+{
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_0, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_1, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_2, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_3, GPIO_PIN_SET);
+}
+
+/*void send_STM32_L2_request()
 {
 	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_0, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_1, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_2, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_3, GPIO_PIN_RESET);
-}
+}*/
 
 void send_verif_OK()
 {
@@ -304,12 +312,27 @@ void wait_for_req_FPGA()
 	}
 }
 
+int FPGA_verification_result(){
+	int Mode[4]={0};
+	int result;
+	Mode[0]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_0);
+	Mode[1]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_1);
+	Mode[2]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_2);
+	Mode[3]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_3);
+	if (Mode[0]==Mode[1]==Mode[2]==Mode[3]==1){
+		result = 1;
+	}else {
+		result = 0;
+	}
+	return result;
+}
+
 
 void reset_all_Data_outputs()
 {
 	HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_0, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_1, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_2, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOC, DATA_OUT_2, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_3, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_4, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_5, GPIO_PIN_RESET);
@@ -326,16 +349,12 @@ void reset_all_Data_outputs()
 
 }
 
-void init_LAYER1(float layer1[][75]){
+void init_INPUT(float input[]){
 	int i=0;
-	int j=0;
 	float cpt = -15.0;
-	for (i=0;i<20;i++)
+	for (i=0;i<30;i++)
 	{
-		for (j=0;j<75;j++)
-		{
-			layer1[i][j] = 1;
+			input[i] = cpt;
 			cpt = cpt + 0.1;
-		}
 	}
 }

@@ -299,43 +299,56 @@ void printMatData(MAT* mat,char *name){
     printf("\n}\n");
 }
 
-void testLayerCom(){
+void testInputCom(){
 	printf("test ongoing...\n");
 	init_com();
-	float LAYER1[20][75] = {{0}};
-	init_LAYER1(LAYER1);
+	float INPUT[30] = {{0}};
+	init_INPUT(INPUT);
+	float OUTPUT[4]={{0}};
 
 	printf("initialisations effectues!\n");
 
-	send_STM32_L1_request();
+	send_STM32_Input_request();
 
-	int i,j,verif;
+	int i,verif;
 	float temp_fpga_element = 0;
 
-	for(i = 0; i < 20; i++){
-		for(j = 0; j < 75; j++){
-			send_layer_element(LAYER1[i][j]);
+	for(i = 0; i < 20;0){
+			send_input_element(INPUT[i]);
 			wait_for_ack_FPGA();
-			printf("le FPGA a bien recut l'element %d _ %d\n",i,j);
+			printf("le FPGA a bien recut l'element %d\n",i);
 			wait_for_req_FPGA();
-			printf("le FPGA a renvoye son element %d _ %d\n",i,j);
-			temp_fpga_element = read_fpga_layer_element();
+			printf("le FPGA a renvoye son element %d\n",i);
+			temp_fpga_element = read_fpga_input_element();
 			printf("Read from pins : %f\n",temp_fpga_element);
-			verif=verif_layer_element(LAYER1[i][j], temp_fpga_element);
+			verif=verif_input_element(INPUT[i], temp_fpga_element);
 			if (verif==0)
 			{
 				send_verif_false();
-				break;
 				printf("l'element renvoye est different\n");
 
 			}else{
 				send_verif_OK();
 				printf("element du FPGA = element du STM32\n");
+				i+=1;
 			}
+	}
+	wait_for_ack_FPGA();
+	for(int j = 0 ; j<4 ;0){
+		wait_for_req_FPGA();
+		temp_fpga_element = read_fpga_input_element();
+		send_input_element(temp_fpga_element);
+		send_ack_STM32();
+		HAL_Delay(10);
+		verif = FPGA_verification_result();
+		if (verif==1){
+			OUTPUT[j]= temp_fpga_element;
+			j+=1;
+		}else {
+			printf("le STM32 a renvoye au FPGA un element faux \n");
 		}
 	}
 
-	send_STM32_L2_request();
 }
 
 
@@ -577,7 +590,7 @@ int main(void)
 
 	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 #ifdef FPGA_COM
-	  testLayerCom();
+	  testInputCom();
 #endif
 
 while (1)
