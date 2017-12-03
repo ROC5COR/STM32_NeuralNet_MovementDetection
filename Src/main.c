@@ -56,11 +56,16 @@
 #define HIDDEN_NEURON 30
 #define TRAINING_
 #define TESTING_
-#define ACCELERO_
+#define ACCELERO
 #define LOUKA_
+<<<<<<< HEAD
 #define FILTER_
 #define FPGA_COM
 #define ACCELERO_
+=======
+#define FILTER
+#define FPGA_COM_
+>>>>>>> branch 'master' of https://github.com/ROC5COR/STM32_NeuralNet_MovementDetection.git
 #define COMMUNICATION_
 
 /* USER CODE END Includes */
@@ -598,6 +603,7 @@ while (1)
  {
 	if (HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_13) == GPIO_PIN_RESET){
 #ifdef FILTER
+	  HAL_Delay(100);
 	  filter_acc();
 #endif
 
@@ -748,13 +754,14 @@ void filter_acc(){
 	 // i2c_startTime = HAL_GetTick();
 	  int i = 0;
 	  int j = 0;
-	  //int k =1;
-	  //int l=1;
+
 	  int16_t i2c_data[3] = {0, 0,0};
 	  int16_t i2c_data_temp[3] ={0,0,0};
+
 	  int16_t i2c_data_filter[1][INPUT_SIZE_FILTER*2];
 	  int16_t i2c_data_pre_filter[1][INPUT_SIZE_FILTER*2];
 	  int16_t i2c_data_output[1][INPUT_SIZE_FILTER*2];
+
 	  while(i<INPUT_SIZE_FILTER){
 		  while (j<30){
 			  getOutput(&ACCELERO_I2C,i2c_data);
@@ -796,19 +803,15 @@ void filter_acc(){
 
 		for(i=1;i<INPUT_SIZE_FILTER;i++){
 
-		  i2c_data_pre_filter[0][2*i]=i2c_data_filter[0][2*i]*0.1+i2c_data_pre_filter[0][2*(i-1)]*0.9;
-		  i2c_data_pre_filter[0][1+2*i]=i2c_data_filter[0][1+2*i]*0.1+i2c_data_pre_filter[0][1+2*(i-1)]*0.9;
+//		  i2c_data_pre_filter[0][2*i]=i2c_data_filter[0][2*i]*0.1+i2c_data_pre_filter[0][2*(i-1)]*0.9;
+//		  i2c_data_pre_filter[0][1+2*i]=i2c_data_filter[0][1+2*i]*0.1+i2c_data_pre_filter[0][1+2*(i-1)]*0.9;
+//
+//		  i2c_data_output[0][2*i]=i2c_data_filter[0][2*i]-i2c_data_pre_filter[0][2*i];
+//		  i2c_data_output[0][1+2*i]=i2c_data_filter[0][1+2*i]-i2c_data_pre_filter[0][1+2*i];
 
-		  i2c_data_output[0][2*i]=i2c_data_filter[0][2*i]-i2c_data_pre_filter[0][2*i];
-		  i2c_data_output[0][1+2*i]=i2c_data_filter[0][1+2*i]-i2c_data_pre_filter[0][1+2*i];
+			i2c_data_output[0][2*i]=i2c_data_filter[0][2*i]*0.1+i2c_data_output[0][2*(i-1)]*0.9;
+			i2c_data_output[0][1+2*i]=i2c_data_filter[0][1+2*i]*0.1+i2c_data_output[0][1+2*(i-1)]*0.9;
 
-		  /*if (k==10) {
-			  ((float**)input_filter->mat)[0][2*l]=i2c_data_output[0][2*l];
-			  ((float**)input_filter->mat)[0][2*l+1]=i2c_data_output[0][1+2*l];
-			  k=1;
-			  l++;
-		  }*
-		  k++;*/
 
 		  ((float**)input_filter->mat)[0][2*i]=i2c_data_output[0][2*i];
 		  ((float**)input_filter->mat)[0][2*i+1]=i2c_data_output[0][1+2*i];
