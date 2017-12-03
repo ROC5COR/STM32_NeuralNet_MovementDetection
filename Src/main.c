@@ -335,7 +335,6 @@ void testInputCom(){
 			}
 	}
 	wait_for_ack_FPGA();
-	send_ack_STM32();
 	for(int j = 0 ; j<4 ;0){
 		wait_for_req_FPGA();
 		temp_fpga_element = read_fpga_input_element();
