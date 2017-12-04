@@ -51,18 +51,20 @@
 #define DATA_IN_15 GPIO_PIN_15
 
 void init_com();
-void send_layer_element(float layer_element);
-float read_fpga_layer_element();
-int verif_layer_element(float layer_element, float temp_fpga_element);
-void read_bits_layer(float layer_element, int Tab_bits[]);
+void send_input_element(float layer_element);
+float read_fpga_input_element();
+int verif_input_element(float layer_element, float temp_fpga_element);
+void read_bits_input(float layer_element, int Tab_bits[]);
 float load_bits_to_element(int Tab_bits[]);
-void send_STM32_L1_request();
-void send_STM32_L2_request();
+void send_STM32_Input_request();
+void send_ack_STM32();
+/*void send_STM32_L2_request();*/
 void send_verif_OK();
 void send_verif_false();
 void wait_for_ack_FPGA();
 void wait_for_req_FPGA();
+int FPGA_verification_result();
 void reset_all_Data_outputs();
 
 
-void init_LAYER1(float layer1[][75]);
+void init_INPUT(float input[]);
