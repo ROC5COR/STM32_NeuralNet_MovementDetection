@@ -361,6 +361,7 @@ uint16_t float_to_hexa(float input){
 	int sign = 0x0;
 	if(input < 0){
 		sign = 0x1;
+		input = -input;
 	}
 	uint16_t int_part = floor(input);
 	uint16_t frac_part = (input - (float)int_part)*2048;
@@ -371,8 +372,9 @@ uint16_t float_to_hexa(float input){
 	total |= sign<<15;
 	total |= int_part<<11;
 	total |= frac_part;
-	printf("Total (hexa): %05x ; Total(int):%d\n",total,total);
+	//printf("Total (hexa): %05x ; Total(int):%d\n",total,total);
 
 	return total;
 }
+
 
