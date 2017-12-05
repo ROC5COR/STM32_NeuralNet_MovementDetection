@@ -57,13 +57,12 @@
 #define CIRCLE_SAMPLES 40
 #define SQUARE_SAMPLES 40
 
-#define TRAINING
-#define TESTING
-#define ACCELERO_
+#define TRAINING_
+#define TESTING_
+#define ACCELERO
 #define LOUKA_
-#define FILTER_
+#define FILTER
 #define FPGA_COM_
-#define ACCELERO_
 #define COMMUNICATION_
 
 /* USER CODE END Includes */
@@ -771,16 +770,16 @@ void filter_acc(){
 	   // printf("Fin acquisition\n");
 	   // printf("delai : %u\n",HAL_GetTick() - i2c_startTime);
 	  //printMatrix(input_pre_filter,(char*)"pre_filtre");
-		i2c_data_pre_filter[0][0]=i2c_data_filter[0][0];
-		i2c_data_pre_filter[0][1]=i2c_data_filter[0][1];
+      //i2c_data_pre_filter[0][0]=i2c_data_filter[0][0];
+      //i2c_data_pre_filter[0][1]=i2c_data_filter[0][1];
 		i2c_data_output[0][0]=i2c_data_filter[0][0];
 		i2c_data_output[0][1]=i2c_data_filter[0][1];
 
 		//printf("suppression offset\n");
 		//((float**)input->mat)[0][0]=0;
 		//((float**)input->mat)[0][1]=0;
-		((float**)input_filter->mat)[0][0]=0;
-		((float**)input_filter->mat)[0][1]=0;
+		((float**)input_filter->mat)[0][0]=i2c_data_filter[0][0];
+		((float**)input_filter->mat)[0][1]=i2c_data_filter[0][1];
 
 		//printf("Data\n");
 		printf("%f\n",((float**)input_filter->mat)[0][0]);
