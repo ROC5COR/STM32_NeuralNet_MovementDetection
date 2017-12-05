@@ -49,21 +49,24 @@
 
 
 #define ACCELERO_I2C hi2c3
-#define SAMPLE_SIZE 102
+#define SAMPLE_SIZE 120
 #define INPUT_SIZE 30
 #define OUTPUT_SIZE 4
 #define INPUT_SIZE_FILTER 150
-#define HIDDEN_NEURON 30
+#define NB_EPOCHS 500
+#define HIDDEN_NEURON 20
 #define CIRCLE_SAMPLES 40
 #define SQUARE_SAMPLES 40
+#define TRIANGLE_SAMPLES 40
+#define S_SAMPLES 40
 
-#define TRAINING_
-#define TESTING_
-#define ACCELERO
+#define TRAINING
+#define TESTING
+#define ACCELERO_
 #define LOUKA_
-#define FILTER
+#define FILTER_
 #define FPGA_COM_
-#define COMMUNICATION_
+#define ACCELERO_
 
 /* USER CODE END Includes */
 
@@ -111,6 +114,8 @@ void fill_matrix_syn1();
 void fill_matrix_syn2();
 void fill_matrix_square();
 void fill_matrix_circle();
+void fill_matrix_triangle();
+void fill_matrix_S();
 
 /* USER CODE END PFP */
 
@@ -143,13 +148,16 @@ MAT *inputTranspose;
 MAT *syn2Temp;
 MAT *syn1Temp;
 MAT *output;
+uint32_t totalTrainingTime = 0;
 //MAT *outputs;
 
 #ifdef TRAINING
-float inputs[2*20][INPUT_SIZE];
-float outputs[2*20][OUTPUT_SIZE];
+float inputs[SAMPLE_SIZE][INPUT_SIZE];
+float outputs[SAMPLE_SIZE][OUTPUT_SIZE];
 float circle[CIRCLE_SAMPLES][INPUT_SIZE];
 float square[SQUARE_SAMPLES][INPUT_SIZE];
+float triangle[TRIANGLE_SAMPLES][INPUT_SIZE];
+float S[S_SAMPLES][INPUT_SIZE];
 #endif
 
 
@@ -158,9 +166,9 @@ float square[SQUARE_SAMPLES][INPUT_SIZE];
 void initTestingMatrix(){
 	input = createMatrix_float(1,INPUT_SIZE);
 	input_filter = createMatrix_float(1,INPUT_SIZE_FILTER*2);
-    l1 = createMatrix_float(1,HIDDEN_NEURON);
-    l2 = createMatrix_float(1,OUTPUT_SIZE);
-    output = createMatrix_float(1,OUTPUT_SIZE);
+  l1 = createMatrix_float(1,HIDDEN_NEURON);
+  l2 = createMatrix_float(1,OUTPUT_SIZE);
+  output = createMatrix_float(1,OUTPUT_SIZE);
 }
 void freeTestingMatrix(){
     free(input);
@@ -245,7 +253,7 @@ void train_solo(){
     }*/
 #ifdef TRAINING
     int i;
-    for(i = 0; i < 2*20;i++){
+    for(i = 0; i < SAMPLE_SIZE;i++){//Iterate through data (inputs and output)
         ((VAR**)input->mat)[0] = inputs[i];
 
         //input->matN = inputs->matN;
@@ -307,9 +315,15 @@ void printMatData(MAT* mat,char *name){
 void testInputCom(){
 	printf("test ongoing...\n");
 	init_com();
-	float INPUT[30] = {{0}};
-	init_INPUT(INPUT);
-	float OUTPUT[4]={{0}};
+	float INPUT[30] = {0};
+	//init_INPUT(INPUT);
+	for(int i = 0; i < 30; i++){
+		INPUT[i] = 0.5;
+	}
+	for(int i = 0; i < 30; i++){
+			printf("Value %d : %f\n",i,INPUT[i]);
+		}
+	float OUTPUT[4] = {0};
 
 	printf("initialisations effectues!\n");
 
@@ -318,13 +332,15 @@ void testInputCom(){
 	int i,verif;
 	float temp_fpga_element = 0;
 
-	for(i = 0; i < 20;0){
+	for(i = 0; i < 30;){
 			send_input_element(INPUT[i]);
-			wait_for_ack_FPGA();
-			printf("le FPGA a bien recut l'element %d\n",i);
+			send_STM32_Input_request();
+			//wait_for_ack_FPGA();
+			printf("Le FPGA a bien recut l'element %d\n",i);
 			wait_for_req_FPGA();
-			printf("le FPGA a renvoye son element %d\n",i);
+			printf("Le FPGA a renvoye son element %d\n",i);
 			temp_fpga_element = read_fpga_input_element();
+
 			printf("Read from pins : %f\n",temp_fpga_element);
 			verif=verif_input_element(INPUT[i], temp_fpga_element);
 			if (verif==0)
@@ -339,7 +355,7 @@ void testInputCom(){
 			}
 	}
 	wait_for_ack_FPGA();
-	for(int j = 0 ; j<4 ;0){
+	for(int j = 0 ; j<4;){
 		wait_for_req_FPGA();
 		temp_fpga_element = read_fpga_input_element();
 		send_input_element(temp_fpga_element);
@@ -354,6 +370,69 @@ void testInputCom(){
 		}
 	}
 
+}
+
+
+float getTestingScore(){
+	  int successCpt = 0;
+	  int testCpt = 0;
+	  //Circle
+	  for(int sample = 30; sample < 40; sample++){
+		  for(int i = 0; i < INPUT_SIZE; i++){
+			  ((float**)input->mat)[0][i] = (float)(circle[sample][i]+250.0)/(float)500.0;
+		  }
+		  performComputation();
+		  if(((float**)l2->mat)[0][3] > ((float**)l2->mat)[0][0] &&
+				  ((float**)l2->mat)[0][3] > ((float**)l2->mat)[0][1] &&
+				  ((float**)l2->mat)[0][3] > ((float**)l2->mat)[0][2]){
+			  successCpt++;
+		  }
+		  else{
+		  }
+		  testCpt++;
+	  }
+	  //Square
+	  for(int sample = 30; sample < 40; sample++){
+		  for(int i = 0; i < INPUT_SIZE; i++){
+			  ((float**)input->mat)[0][i] = (float)(square[sample][i]+250.0)/(float)500.0;
+		  }
+		  performComputation();
+		  if(((float**)l2->mat)[0][2] > ((float**)l2->mat)[0][0] &&
+					  ((float**)l2->mat)[0][2] > ((float**)l2->mat)[0][1] &&
+					  ((float**)l2->mat)[0][2] > ((float**)l2->mat)[0][3]){
+				  successCpt++;
+		  }
+
+		  testCpt++;
+	  }
+	  //Triangle
+	  for(int sample = 30; sample < 40; sample++){
+			  for(int i = 0; i < INPUT_SIZE; i++){
+				  ((float**)input->mat)[0][i] = (float)(triangle[sample][i]+250.0)/(float)500.0;
+			  }
+			  performComputation();
+			if(((float**)l2->mat)[0][1] > ((float**)l2->mat)[0][0] &&
+						  ((float**)l2->mat)[0][1] > ((float**)l2->mat)[0][2] &&
+						  ((float**)l2->mat)[0][1] > ((float**)l2->mat)[0][3]){
+					  successCpt++;
+			  }
+			  testCpt++;
+	  }
+	  //S
+	  for(int sample = 30; sample < 40; sample++){
+			  for(int i = 0; i < INPUT_SIZE; i++){
+				  ((float**)input->mat)[0][i] = (float)(S[sample][i]+250.0)/(float)500.0;
+			  }
+			  performComputation();
+			if(((float**)l2->mat)[0][0] > ((float**)l2->mat)[0][1] &&
+						  ((float**)l2->mat)[0][0] > ((float**)l2->mat)[0][2] &&
+						  ((float**)l2->mat)[0][0] > ((float**)l2->mat)[0][3]){
+				  successCpt++;
+			  }
+
+			  testCpt++;
+	  }
+	  return (float)successCpt/(float)testCpt;
 }
 
 
@@ -399,22 +478,14 @@ int main(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-  //Clock Output
-  /*GPIO_InitStruct.Pin = GPIO_PIN_8;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);*/
 
-  	  //button
+  //button
   GPIO_InitStruct.Pin = GPIO_PIN_13;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-
-  //HAL_RCC_MCOConfig(RCC_MCO, RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_16);
   HAL_RCC_MCOConfig(RCC_MCO, RCC_MCO1SOURCE_SYSCLK, RCC_MCODIV_16);
 
   /* USER CODE END 2 */
@@ -425,91 +496,181 @@ int main(void)
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
-	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+	 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 
-    printf("Init (limit:[%d,%d]); SystemCoreClock:[%ldMHz]; Sizeof VAR:[%d]; INPUT_SIZE:[%d]; HIDDEN_SIZE:[%d]; OUTPUT_SIZE:[%d]\n",MIN_VALUE,MAX_VALUE, SystemCoreClock/1000000,sizeof(VAR), INPUT_SIZE, HIDDEN_NEURON, OUTPUT_SIZE);
+	 printf("Init (limit:[%d,%d]); SystemCoreClock:[%ldMHz]; Sizeof VAR:[%d]; INPUT_SIZE:[%d]; HIDDEN_SIZE:[%d]; OUTPUT_SIZE:[%d]\n",MIN_VALUE,MAX_VALUE, SystemCoreClock/1000000,sizeof(VAR), INPUT_SIZE, HIDDEN_NEURON, OUTPUT_SIZE);
 
-	  srand(time(NULL));
+	 srand(time(NULL));
 
-	  syn1 = createMatrix_float(INPUT_SIZE,HIDDEN_NEURON);
-	  syn2 = createMatrix_float(HIDDEN_NEURON,OUTPUT_SIZE);
-
-
-	 // uint32_t endTime, startTime = HAL_GetTick();
-
-#ifdef LOUKA
-	 
-#endif
+	 syn1 = createMatrix_float(INPUT_SIZE,HIDDEN_NEURON);
+	 syn2 = createMatrix_float(HIDDEN_NEURON,OUTPUT_SIZE);
 
 #ifdef TRAINING
 	fillRandomValuesFloat(syn1,-1,1);
 	fillRandomValuesFloat(syn2,-1,1);
 	initTrainingSoloMatrix();
-	//fill_static_matrix_inputs();
-	//fill_static_matrix_outputs();
 
     fill_matrix_circle();
     fill_matrix_square();
+    fill_matrix_triangle();
+    fill_matrix_S();
 
-    /*for(int i = 0; i < CIRCLE_SAMPLES; i++){
-      for(int j = 0; j < INPUT_SIZE; j++){
-        printf("%f ",circle[i][j]);
-      }
-      printf("\n");
-    }*/
     printf("Setting data in inputs matrix...\n");
     //First matrix filling
-    for(int i = 0; i < 20; i++){
+    int cpt = 0;
+    for(int i = 0; i < 30; i++){//Take the 30 first samples
       for(int j = 0; j < INPUT_SIZE; j++){
-        inputs[i][j] = (float)(circle[i][j]+250.0)/(float)500.0;//Formatting data
-    	//inputs[i][j] = (float)(circle[i][j])/(float)500.0;
-      }
-      outputs[i][0] = 0;
-      outputs[i][1] = 0;
-      outputs[i][2] = 0;
-      outputs[i][3] = 1;
-    }
-    printf("First matrix : set\n");
-    //Second matrix filling
-   for(int i = 0; i < 20; i++){
-      for(int j = 0; j < INPUT_SIZE; j++){
-        inputs[i+20][j] = (float)(square[i][j]+250.0)/(float)500.0;//Formatting data
-        //inputs[i+20][j] = (float)(square[i][j])/(float)500.0;
-      }
-      outputs[i+20][0] = 0;
-      outputs[i+20][1] = 0;
-      outputs[i+20][2] = 1;
-      outputs[i+20][3] = 0;
-    }
-    printf("Second matrix : set\n");
+        inputs[cpt][j] = (float)(circle[i][j]+250.0)/(float)500.0;//Formatting data
+        inputs[cpt+1][j] = (float)(square[i][j]+250.0)/(float)500.0;//Formatting data
+        inputs[cpt+2][j] = (float)(triangle[i][j]+250.0)/(float)500.0;//Formatting data
+        inputs[cpt+3][j] = (float)(S[i][j]+250.0)/(float)500.0;//Formatting data
 
-    /*for(int i = 0; i < CIRCLE_SAMPLES; i++){
-          for(int j = 0; j < INPUT_SIZE; j++){
-            printf("%f ",inputs[i][j]);
-          }
-          printf("\n");
-    }*/
-    //printMatrix(syn1,(char*)"syn1 before");
+        //inputs[cpt][j] = (float)(circle[i][j])/(float)500.0;//Formatting data
+        //inputs[cpt+1][j] = (float)(square[i][j])/(float)500.0;//Formatting data
+      }
+      outputs[cpt][0] = 0;
+      outputs[cpt][1] = 0;
+      outputs[cpt][2] = 0;
+      outputs[cpt][3] = 1;
 
-	  uint32_t startTime = HAL_GetTick();
-	  for(int epochs = 0; epochs < 100; epochs++){
+      outputs[cpt+1][0] = 0;
+      outputs[cpt+1][1] = 0;
+      outputs[cpt+1][2] = 1;
+      outputs[cpt+1][3] = 0;
+
+      outputs[cpt+2][0] = 0;
+      outputs[cpt+2][1] = 1;
+      outputs[cpt+2][2] = 0;
+      outputs[cpt+2][3] = 0;
+
+      outputs[cpt+3][0] = 1;
+      outputs[cpt+3][1] = 0;
+      outputs[cpt+3][2] = 0;
+      outputs[cpt+3][3] = 0;
+      cpt = cpt + 4;
+    }
+    printf("Matrix : set\n");
+#ifdef TESTING
+    initTestingMatrix();
+#endif
+	 uint32_t startTime = HAL_GetTick();
+	 for(int epochs = 0; epochs < NB_EPOCHS; epochs++){
 		  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 		  train_solo();
-		  //if(epochs % 100 == 0){
-			  printf("Epochs : %d\n",epochs);
-		  //}
-		  //printMatrix(syn1,(char*)"syn1");
-		  //printMatrix_float(syn2,(char*)"syn2");
-		  //getchar();
-
+		  printf("Epochs : %d; Performance : %f\n",epochs,getTestingScore());
 	  }
 	  uint32_t endTime = HAL_GetTick();
 
 	  printf("StartTime : \t%ld\n",startTime);
 	  printf("EndTime : \t%ld\n",endTime);
+	  totalTrainingTime = endTime - startTime;
 	  freeTrainingSoloMatrix();
+#ifdef TESTING
+	  freeTestingMatrix();
+#endif
 #endif
 
+#ifdef LOUKA
+#ifndef TRAINING
+	  fillRandomValuesFloat(syn1,-1,1);
+	  fillRandomValuesFloat(syn2,-1,1);
+#endif
+	  limitMatrix(syn1,syn1);
+	  limitMatrix(syn2,syn2);
+	 int syn1_int;
+	 int syn2_int;
+	 printf("Matrice 1\n");
+	 printMatrix(syn1,(char*)"syn1");
+	 for(int i = 0; i<=HIDDEN_NEURON; i++){
+		 printf("%d : ",i);
+		 for(int j=16-1; j>=0; j--){
+			 if( (((float**)syn1->mat)[j][i]) < 0){
+				 syn1_int = (int)(((float**)syn1->mat)[j][i]*2047) + 32768;
+			 }
+			 else {
+				 syn1_int = (int)(((float**)syn1->mat)[j][i]*2047);
+			 }
+
+			 printf("%04X",syn1_int);
+		 }
+		 printf(";\n");
+	}
+		 for(int i = 0; i<=HIDDEN_NEURON ; i++){
+		 		 printf("%d : ",i);
+		 		 for(int j=30-1; j>=16; j--){
+		 			 if( (((float**)syn1->mat)[j][i]) < 0){
+		 				 syn1_int = (int)(((float**)syn1->mat)[j][i]*2047) + 32768;
+		 			 }
+		 			 else {
+		 				 syn1_int = (int)(((float**)syn1->mat)[j][i]*2047);
+		 			 }
+
+		 			 printf("%04X",syn1_int);
+		 		 }
+		 printf(";\n");
+	 }
+	 printf("End\n");
+	 printf("Matrice 2\n");
+	 	 printMatrix(syn2,(char*)"syn2");
+	 	 for(int i = 0; i<=3; i++){
+	 		 printf("%d : ",i);
+	 		 for(int j=16-1; j>=0; j--){
+	 			 if( (((float**)syn2->mat)[j][i]) < 0){
+	 				 syn2_int = (int)(((float**)syn2->mat)[j][i]*2047) + 32768;
+	 			 }
+	 			 else {
+	 				 syn2_int = (int)(((float**)syn2->mat)[j][i]*2047);
+	 			 }
+
+	 			 printf("%04X",syn2_int);
+	 		 }
+	 		 printf(";\n");
+	 	}
+	 	 for(int i = 0; i<=3; i++){
+	 		 		 printf("%d : ",i);
+	 		 		 for(int j=32-1; j>=16; j--){
+	 		 			 if( (((float**)syn2->mat)[j][i]) < 0){
+	 		 				 syn2_int = (int)(((float**)syn2->mat)[j][i]*2047) + 32768;
+	 		 			 }
+	 		 			 else {
+	 		 				 syn2_int = (int)(((float**)syn2->mat)[j][i]*2047);
+	 		 			 }
+
+	 		 			 printf("%04X",syn2_int);
+	 		 		 }
+	 		 		 printf(";\n");
+	 		 	}
+	 	 for(int i = 0; i<=3; i++){
+	 		 		 printf("%d : ",i);
+	 		 		 for(int j=48-1; j>=32; j--){
+	 		 			 if( (((float**)syn2->mat)[j][i]) < 0){
+	 		 				 syn2_int = (int)(((float**)syn2->mat)[j][i]*2047) + 32768;
+	 		 			 }
+	 		 			 else {
+	 		 				 syn2_int = (int)(((float**)syn2->mat)[j][i]*2047);
+	 		 			 }
+
+	 		 			 printf("%04X",syn2_int);
+	 		 		 }
+	 		 		 printf(";\n");
+	 		 	}
+	 	 for(int i = 0; i<=3; i++){
+	 		 		 printf("%d : ",i);
+	 		 		 for(int j=50-1; j>=48; j--){
+	 		 			 if( (((float**)syn2->mat)[j][i]) < 0){
+	 		 				 syn2_int = (int)(((float**)syn2->mat)[j][i]*2047) + 32768;
+	 		 			 }
+	 		 			 else {
+	 		 				 syn2_int = (int)(((float**)syn2->mat)[j][i]*2047);
+	 		 			 }
+
+	 		 			 printf("%04X",syn2_int);
+	 		 		 }
+	 		 		 printf(";\n");
+	 		 	}
+	 	 printf("End\n");
+
+#endif
 
 #ifdef ACCELERO
 
@@ -538,12 +699,12 @@ int main(void)
 #endif
 
 #ifdef TESTING
-	  printf("testing\n");
+	  printf("Testing...\n");
 	  initTestingMatrix();
 
 	  //Testing with new data
 	  for(int i = 0; i < INPUT_SIZE; i++){
-		  ((float**)input->mat)[0][i] = circle[20 + 1][i];
+		  ((float**)input->mat)[0][i] = circle[30 + 1][i];
 	  }
 	  uint32_t startTimeTesting = HAL_GetTick();
 	  performComputation();
@@ -551,31 +712,116 @@ int main(void)
 
 	  printMatrix(l2,(char*)"1: Circle ? : ");
 	  printf("DeltaTick : %ld\n",endTimeTesting-startTimeTesting);
-
-	  for(int sample = 20; sample < 40; sample++){
+	  int successCpt = 0;
+	  int testCpt = 0;
+	  //Circle
+	  for(int sample = 30; sample < 40; sample++){
 		  for(int i = 0; i < INPUT_SIZE; i++){
-			  ((float**)input->mat)[0][i] = circle[sample][i];
+			  ((float**)input->mat)[0][i] = (float)(circle[sample][i]+250.0)/(float)500.0;
 		  }
 		  printf("Sample(%d)\n",sample);
 		  performComputation();
+		  printMatrix(input, "Input :");
+		  if(((float**)l2->mat)[0][3] > ((float**)l2->mat)[0][0] &&
+				  ((float**)l2->mat)[0][3] > ((float**)l2->mat)[0][1] &&
+				  ((float**)l2->mat)[0][3] > ((float**)l2->mat)[0][2]){
+			  printf("Success !\n");
+			  successCpt++;
+		  }
+		  else{
+			  printf("Fail !\n");
+		  }
 		  printMatrix(l2,(char*)"1: Circle ? : ");
+		  testCpt++;
 	  }
-
-	  for(int sample = 20; sample < 40; sample++){
+	  //Square
+	  for(int sample = 30; sample < 40; sample++){
 		  for(int i = 0; i < INPUT_SIZE; i++){
-			  ((float**)input->mat)[0][i] = square[sample][i];
+			  ((float**)input->mat)[0][i] = (float)(square[sample][i]+250.0)/(float)500.0;
 		  }
 		  printf("Sample(%d)\n",sample);
 		  performComputation();
-		  printMatrix(l2,(char*)"Square ? : ");
+		  if(((float**)l2->mat)[0][2] > ((float**)l2->mat)[0][0] &&
+					  ((float**)l2->mat)[0][2] > ((float**)l2->mat)[0][1] &&
+					  ((float**)l2->mat)[0][2] > ((float**)l2->mat)[0][3]){
+				  printf("Success !\n");
+				  successCpt++;
+		  }
+		  else{
+		  	  printf("Fail !\n");
+		  }
+		  printMatrix(l2,(char*)"2: Square ? : ");
+		  testCpt++;
 	  }
-
+	  //Triangle
+	  for(int sample = 30; sample < 40; sample++){
+	  		  for(int i = 0; i < INPUT_SIZE; i++){
+	  			  ((float**)input->mat)[0][i] = (float)(triangle[sample][i]+250.0)/(float)500.0;
+	  		  }
+	  		  printf("Sample(%d)\n",sample);
+	  		  performComputation();
+	  		if(((float**)l2->mat)[0][1] > ((float**)l2->mat)[0][0] &&
+						  ((float**)l2->mat)[0][1] > ((float**)l2->mat)[0][2] &&
+						  ((float**)l2->mat)[0][1] > ((float**)l2->mat)[0][3]){
+					  printf("Success !\n");
+					  successCpt++;
+	  		  }
+	  		  else{
+	  		  	  printf("Fail !\n");
+	  		  }
+	  		  printMatrix(l2,(char*)"3: Triangle ? : ");
+	  		  testCpt++;
+	  }
+	  //S
+	  for(int sample = 30; sample < 40; sample++){
+	  		  for(int i = 0; i < INPUT_SIZE; i++){
+	  			  ((float**)input->mat)[0][i] = (float)(S[sample][i]+250.0)/(float)500.0;
+	  		  }
+	  		  printf("Sample(%d)\n",sample);
+	  		  performComputation();
+	  		if(((float**)l2->mat)[0][0] > ((float**)l2->mat)[0][1] &&
+						  ((float**)l2->mat)[0][0] > ((float**)l2->mat)[0][2] &&
+						  ((float**)l2->mat)[0][0] > ((float**)l2->mat)[0][3]){
+				  printf("Success !\n");
+				  successCpt++;
+	  		  }
+	  		  else{
+	  		  	  printf("Fail !\n");
+	  		  }
+	  		  printMatrix(l2,(char*)"4: S ? : ");
+	  		  testCpt++;
+	  }
+	  printf("%d/%d success\n", successCpt, testCpt);
 	  freeTestingMatrix();
+
+	  printf("Synthesis : \n");
+#ifdef TESTING
+#ifndef TRAINING
+	  printf("\t- TESTING_ONLY\n");
+#endif
+#ifdef TRAINING
+	  printf("\t- TRAINING_AND_TESTING\n");
+#endif
+#endif
+#ifndef TESTING
+#ifdef TRAINING
+	  printf("\t- TRAINING_ONLY\n");
+#endif
+#endif
+	  printf("\t- TRAINING_TIME : %d\n",totalTrainingTime);
+	  printf("\t- NB_TRAINING_SAMPLES : %d\n", SAMPLE_SIZE);
+	  printf("\t- NB_TESTING_SAMPLES : %d\n", testCpt);
+	  printf("\t- INPUT_SIZE : %d\n", INPUT_SIZE);
+	  printf("\t- NB_HIDDEN_NEURONS : %d\n", HIDDEN_NEURON);
+	  printf("\t- NB_OUTPUT_NEURONS : %d\n", OUTPUT_SIZE);
+	  printf("\t- NB_EPOCHS : %d\n", NB_EPOCHS);
+	  printf("\t- SUCCESS_RATE : %f%%\n", (float)successCpt/(float)testCpt);
+
 
 #endif
 #ifdef TRAINING
-    printMatData(syn1,(char*)"syn1");
-    printMatData(syn2,(char*)"syn2");
+    //printMatData(syn1,(char*)"syn1");
+    //printMatData(syn2,(char*)"syn2");
 #endif
 
 	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);

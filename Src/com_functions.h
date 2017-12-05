@@ -5,12 +5,13 @@
 #define MODE_OUT_1 GPIO_PIN_9
 #define MODE_OUT_2 GPIO_PIN_2
 #define MODE_OUT_3 GPIO_PIN_3
+
 #define DATA_OUT_2 GPIO_PIN_10
 
-#define MODE_IN_0 GPIO_PIN_4
-#define MODE_IN_1 GPIO_PIN_5
-#define MODE_IN_2 GPIO_PIN_6
-#define MODE_IN_3 GPIO_PIN_7
+#define MODE_IN_0 GPIO_PIN_7
+#define MODE_IN_1 GPIO_PIN_6
+#define MODE_IN_2 GPIO_PIN_5
+#define MODE_IN_3 GPIO_PIN_4
 
 #define DATA_OUT_PORT GPIOA
 
