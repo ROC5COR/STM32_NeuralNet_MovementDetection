@@ -50,9 +50,9 @@ void init_com()
 	GPIO_InitStructureDataOut.Pin = DATA_OUT_0 | DATA_OUT_1 | DATA_OUT_3 | DATA_OUT_4 | DATA_OUT_5 | DATA_OUT_6  | DATA_OUT_7 | DATA_OUT_8 | DATA_OUT_9 | DATA_OUT_10 | DATA_OUT_11 | DATA_OUT_12 | DATA_OUT_13 | DATA_OUT_14 | DATA_OUT_15;
 	GPIO_InitStructureDataOut.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStructureDataOut.Pull = GPIO_NOPULL;
-	printf("1er\n");
+
 	HAL_GPIO_Init(DATA_OUT_PORT, &GPIO_InitStructureDataOut);
-	printf("2eme\n");
+	printf("Init pin com : OK\n");
 
 }
 
@@ -62,13 +62,10 @@ void init_com()
  */
 void send_input_element(float layer_element)
 {
-	int Tab_bits[16];
+	int Tab_bits[11];
 
-	read_bits_layer(layer_element, Tab_bits);
-	for(int i = 0; i < 16;i++){
-		printf("%d,",Tab_bits[i]);
-	}
-	printf("\n");
+	read_bits_input(layer_element, Tab_bits);
+
 
 	if(Tab_bits[0]==1){
 		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_0, GPIO_PIN_SET);
@@ -125,7 +122,7 @@ void send_input_element(float layer_element)
 	}else{
 		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_10, GPIO_PIN_RESET);
 	}
-	if(Tab_bits[11]==1){
+	/*if(Tab_bits[11]==1){
 		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_11, GPIO_PIN_SET);
 	}else{
 		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_11, GPIO_PIN_RESET);
@@ -149,6 +146,10 @@ void send_input_element(float layer_element)
 		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_15, GPIO_PIN_SET);
 	}else{
 		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_15, GPIO_PIN_RESET);
+	}*/
+
+	for(int i = 0; i < 11; i++){
+		printf("Tab_bits %d : %d\n",i,Tab_bits[i]);
 	}
 }
 
@@ -156,7 +157,7 @@ void send_input_element(float layer_element)
 
 float read_fpga_input_element()
 {
-	int Tab_bits[16];
+	int Tab_bits[11];
 	Tab_bits[0]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_0);
 	Tab_bits[1]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_1);
 	Tab_bits[2]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_2);
@@ -168,18 +169,13 @@ float read_fpga_input_element()
 	Tab_bits[8]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_8);
 	Tab_bits[9]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_9);
 	Tab_bits[10]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_10);
-	Tab_bits[11]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_11);
-	Tab_bits[12]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_12);
-	Tab_bits[13]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_13);
-	Tab_bits[14]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_14);
-	Tab_bits[15]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_15);
 
-	for(int i = 0; i < 16; i++){
-		printf("%d,",Tab_bits[i]);
+
+	for(int i = 0; i < 11; i++){
+		printf("DataFromFPGA %d: %d\n",i,Tab_bits[i]);
 	}
 	printf("\n");
 	return load_bits_to_element(Tab_bits);
-
 
 }
 
@@ -203,29 +199,32 @@ int verif_input_element(float input_element, float temp_fpga_element)
 }
 
 
-void read_bits_layer(float input, int Tab_bits[])
+void read_bits_input(float input, int Tab_bits[])
 {
-	if(input > 15){input = 15;}
-	if(input < -15){input = -15;}
+	printf("input = %f",input);
+	if(input > 1){input = 1;}
 
-	int sign = 0x0;
+	if(input < 0){input = 0;}
+
+
+	/*int sign = 0x0;
 	if(input < 0){
 		sign = 0x1;
 		input = - input;
-	}
-	uint16_t int_part = floor(input);
-	uint16_t frac_part = (input - (float)int_part)*2048;
+	}*/
+	//uint16_t int_part = floor(input);
+	uint16_t frac_part = input*2047;
 	//printf("Conversion ent(hexa):%02x ; frac(hexa):%04x\n",int_part,frac_part);
 	//printf("Conversion ent(int):%u ; frac(int):%u\n",int_part,frac_part);
 
 	uint16_t total = 0x0000;
-	total |= sign<<15;
-	total |= int_part<<11;
-	total |= frac_part;
-	//printf("Variable sent on pins (hexa): %05x ; Total(int):%d\n",total,total);
+	//total |= sign<<15;
+	//total |= int_part<<11;
+	total = frac_part;
+	printf("Variable sent on pins (hexa): %05x ; Total(int):%d\n",total,total);
 
 	int i=0;
-	for (i=0;i<16;i++){
+	for (i=0;i<11;i++){
 		//Tab_bits[i]=(layer_element & (1<<i)) >> i;
 		Tab_bits[i] = (total & (1<<i))>>i;
 	}
@@ -235,13 +234,13 @@ void read_bits_layer(float input, int Tab_bits[])
 float load_bits_to_element(int Tab_bits[16])
 {
 
-	uint16_t integer_part = Tab_bits[14]<<3 | Tab_bits[13]<<2 | Tab_bits[12]<<1 | Tab_bits[11]<<0;
+	//uint16_t integer_part = Tab_bits[14]<<3 | Tab_bits[13]<<2 | Tab_bits[12]<<1 | Tab_bits[11]<<0;
 	uint16_t fracionnal_part = Tab_bits[10]<<10 | Tab_bits[9]<<9 | Tab_bits[8]<<8 | Tab_bits[7]<<7 | Tab_bits[6]<<6 | Tab_bits[5]<<5 | Tab_bits[4]<<4 | Tab_bits[3]<<3 | Tab_bits[2]<<2 | Tab_bits[1]<<1 | Tab_bits[0]<<0;
 	//printf("integer_part : %d ; fractionnal_part : %d\n",integer_part,fracionnal_part);
-	float float_total = (float)integer_part+((float)fracionnal_part/2048);
-	if(Tab_bits[15] == 1){
+	float float_total = ((float)fracionnal_part/2047);
+	/*if(Tab_bits[15] == 1){
 		float_total = - float_total;
-	}
+	}*/
 	printf("Variable read from pins : %f\n",float_total);
 	return float_total;
 }
@@ -289,26 +288,36 @@ void send_verif_false()
 void wait_for_ack_FPGA()
 {
 	int Mode[4]={0};
-	while(Mode[0]!=1 && Mode[1]!=0 && Mode[2]!=1 && Mode[3]!=0)
+	while(!((Mode[0] == 0) && (Mode[1] == 1) && (Mode[2] == 0) && (Mode[3] == 1)))
 	{
 		HAL_Delay(10);
-		Mode[0]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_0);
-		Mode[1]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_1);
-		Mode[2]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_2);
-		Mode[3]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_3);
+		Mode[0] = HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_0);
+		Mode[1] = HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_1);
+		Mode[2] = HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_2);
+		Mode[3] = HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_3);
+		printf("WaitAckFPGA Mode 0: %d\n",Mode[0]);
+		printf("WaitAckFPGA Mode 1: %d\n",Mode[1]);
+		printf("WaitAckFPGA Mode 2: %d\n",Mode[2]);
+		printf("WaitAckFPGA Mode 3: %d\n",Mode[3]);
 	}
+	//printf("Okkk\n");
 }
 
 void wait_for_req_FPGA()
 {
 	int Mode[4]={0};
-	while(Mode[0]!=0 && Mode[1]!=0 && Mode[2]!=1 && Mode[3]!=0)
+
+	while(!((Mode[0] == 0) && (Mode[1] == 1) && (Mode[2] == 0) && (Mode[3] == 0)))
 	{
 		HAL_Delay(10);
 		Mode[0]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_0);
 		Mode[1]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_1);
 		Mode[2]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_2);
 		Mode[3]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_3);
+		printf("WaitForReq Mode0: %d\n",Mode[0]);
+		printf("WaitForReq Mode1: %d\n",Mode[1]);
+		printf("WaitForReq Mode2: %d\n",Mode[2]);
+		printf("WaitForReq Mode3: %d\n",Mode[3]);
 	}
 }
 
@@ -319,7 +328,7 @@ int FPGA_verification_result(){
 	Mode[1]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_1);
 	Mode[2]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_2);
 	Mode[3]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_3);
-	if (Mode[0]==Mode[1]==Mode[2]==Mode[3]==1){
+	if (Mode[0] == 1 &&  Mode[1] == 1 && Mode[2]== 1 && Mode[3]==1){
 		result = 1;
 	}else {
 		result = 0;
@@ -351,10 +360,9 @@ void reset_all_Data_outputs()
 
 void init_INPUT(float input[]){
 	int i=0;
-	float cpt = -15.0;
-	for (i=0;i<30;i++)
-	{
-			input[i] = cpt;
-			cpt = cpt + 0.1;
+	float cpt = 0.1;
+	for (i=0;i<30;i++){
+		input[i] = 0.5;
+		cpt = cpt + 0.1;
 	}
 }
