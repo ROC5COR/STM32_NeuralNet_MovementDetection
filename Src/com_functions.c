@@ -413,6 +413,7 @@ void wait_for_FPGA_end_cycle()
 int FPGA_verification_result(){
 	int Mode[4]={0};
 	int result;
+
 	Mode[0]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_0);
 	Mode[1]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_1);
 	Mode[2]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_2);

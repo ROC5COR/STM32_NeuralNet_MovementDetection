@@ -70,6 +70,7 @@ void send_STM32_output_ack();
 void send_verif_OK();
 void send_verif_false();
 
+
 /*
 void wait_for_ack_FPGA();
 void wait_for_req_FPGA();

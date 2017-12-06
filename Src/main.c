@@ -53,11 +53,10 @@
 #define INPUT_SIZE 30
 #define OUTPUT_SIZE 4
 #define INPUT_SIZE_FILTER 150
-<<<<<<< HEAD
 #define HIDDEN_NEURON 30
 #define TRAINING_
 #define TESTING_
-=======
+#define ACCELERO_
 #define NB_EPOCHS 500
 #define HIDDEN_NEURON 20
 #define CIRCLE_SAMPLES 40
@@ -67,20 +66,28 @@
 
 #define TRAINING
 #define TESTING
->>>>>>> branch 'master' of https://github.com/ROC5COR/STM32_NeuralNet_MovementDetection.git
+#define ACCELERO_
+#define NB_EPOCHS 500
+#define HIDDEN_NEURON 20
+#define CIRCLE_SAMPLES 40
+#define SQUARE_SAMPLES 40
+#define TRIANGLE_SAMPLES 40
+#define S_SAMPLES 40
+
+#define TRAINING
+#define TESTING
 #define ACCELERO_
 #define LOUKA_
 #define FILTER_
-<<<<<<< HEAD
 #define FPGA_COM
 #define ACCELERO_
 #define COMMUNICATION_
 
-=======
+
+#define FILTER_
 #define FPGA_COM_
 #define ACCELERO_
 
->>>>>>> branch 'master' of https://github.com/ROC5COR/STM32_NeuralNet_MovementDetection.git
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -850,6 +857,7 @@ while (1)
  {
 	if (HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_13) == GPIO_PIN_RESET){
 #ifdef FILTER
+	  HAL_Delay(100);
 	  filter_acc();
 #endif
 
@@ -938,6 +946,7 @@ static void MX_I2C3_Init(void)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
+
 
     /**Configure Analogue filter 
     */
