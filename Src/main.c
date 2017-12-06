@@ -329,18 +329,20 @@ void testInputCom(){
 
 	printf("initialisations effectues!\n");
 
-	send_STM32_Input_request();
+	wait_for_FPGA_on_S0();
+	send_STM32_start_request();
 
 	int i,verif;
 	float temp_fpga_element = 0;
 
 	for(i = 0; i < 30;){
 			send_input_element(INPUT[i]);
-			send_STM32_Input_request();
-			//wait_for_ack_FPGA();
-			printf("Le FPGA a bien recut l'element %d\n",i);
-			wait_for_req_FPGA();
-			printf("Le FPGA a renvoye son element %d\n",i);
+			send_STM32_next_input_request();
+			//printf("Le FPGA a bien recut l'element %d\n",i);
+			wait_for_input_ack_FPGA();
+			send_STM32_input_ack();
+			wait_for_verif_input_req_FPGA();
+			//printf("Le FPGA a renvoye son element %d\n",i);
 			temp_fpga_element = read_fpga_input_element();
 
 			printf("Read from pins : %f\n",temp_fpga_element);
@@ -356,12 +358,12 @@ void testInputCom(){
 				i+=1;
 			}
 	}
-	wait_for_ack_FPGA();
+	wait_for_end_input_ack_FPGA();
 	for(int j = 0 ; j<4;){
-		wait_for_req_FPGA();
+		wait_for_output_req_FPGA();
 		temp_fpga_element = read_fpga_input_element();
 		send_input_element(temp_fpga_element);
-		send_ack_STM32();
+		send_STM32_output_ack();
 		HAL_Delay(10);
 		verif = FPGA_verification_result();
 		if (verif==1){
@@ -371,6 +373,8 @@ void testInputCom(){
 			printf("le STM32 a renvoye au FPGA un element faux \n");
 		}
 	}
+	wait_for_FPGA_end_cycle();
+	printf("fucking com is finished !")
 
 }
 
@@ -706,8 +710,6 @@ int main(void)
 	  int testCpt = 0;
 	  //Circle
 
-
-	  //printf("CIRCLE_INPUT : %f\n",(float)circle[0][0]);
 
 	  for(int sample = 30; sample < 40; sample++){
 		  for(int i = 0; i < INPUT_SIZE; i++){
