@@ -305,6 +305,7 @@ void send_verif_false()
 	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_3, GPIO_PIN_RESET);
 }
 
+
 void wait_for_FPGA_on_S0()
 {
 	int Mode[4]={0};
