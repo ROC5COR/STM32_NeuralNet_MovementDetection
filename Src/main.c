@@ -56,16 +56,11 @@
 #define HIDDEN_NEURON 30
 #define TRAINING_
 #define TESTING_
-#define ACCELERO
+#define ACCELERO_
 #define LOUKA_
-<<<<<<< HEAD
 #define FILTER_
 #define FPGA_COM
 #define ACCELERO_
-=======
-#define FILTER
-#define FPGA_COM_
->>>>>>> branch 'master' of https://github.com/ROC5COR/STM32_NeuralNet_MovementDetection.git
 #define COMMUNICATION_
 
 /* USER CODE END Includes */
@@ -603,7 +598,6 @@ while (1)
  {
 	if (HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_13) == GPIO_PIN_RESET){
 #ifdef FILTER
-	  HAL_Delay(100);
 	  filter_acc();
 #endif
 
