@@ -75,6 +75,7 @@ void send_verif_false();
 void wait_for_ack_FPGA();
 void wait_for_req_FPGA();
 */
+
 void wait_for_FPGA_on_S0();
 void wait_for_input_ack_FPGA();
 void wait_for_verif_input_req_FPGA();

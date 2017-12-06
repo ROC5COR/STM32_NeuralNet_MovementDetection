@@ -427,6 +427,7 @@ int FPGA_verification_result(){
 }
 
 
+
 void reset_all_Data_outputs()
 {
 	HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_0, GPIO_PIN_RESET);
