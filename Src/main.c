@@ -63,11 +63,11 @@
 #define NORM_DIVIDE 300
 
 #define TRAINING_
-#define TESTING
+#define TESTING_
 #define ACCELERO_
 #define LOUKA_
 #define FILTER_
-#define FPGA_COM_
+#define FPGA_COM
 #define ACCELERO_
 
 /* USER CODE END Includes */
@@ -153,11 +153,13 @@ MAT *syn1Temp;
 MAT *output;
 uint32_t totalTrainingTime = 0;
 #ifdef TESTING
+
+#endif
+
 float circle[CIRCLE_SAMPLES][INPUT_SIZE];
 float square[SQUARE_SAMPLES][INPUT_SIZE];
 float triangle[TRIANGLE_SAMPLES][INPUT_SIZE];
 float S[S_SAMPLES][INPUT_SIZE];
-#endif
 
 #ifdef TRAINING
 float inputs[SAMPLE_SIZE][INPUT_SIZE];
@@ -374,7 +376,7 @@ void testInputCom(){
 		}
 	}
 	wait_for_FPGA_end_cycle();
-	printf("fucking com is finished !")
+	printf("fucking com is finished !");
 
 }
 
