@@ -245,20 +245,40 @@ float load_bits_to_element(int Tab_bits[16])
 	return float_total;
 }
 
-void send_STM32_Input_request()
+void send_STM32_start_request()
 {
 	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_0, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_1, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_2, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_3, GPIO_PIN_RESET);
+	printf("STM32_start_request sent \n");
 }
 
-void send_ack_STM32()
+void send_STM32_next_input_request()
+{
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_0, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_1, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_2, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_3, GPIO_PIN_RESET);
+	printf("STM32_next_input_request sent \n");
+}
+
+void send_STM32_input_ack()
 {
 	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_0, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_1, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_2, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_3, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_3, GPIO_PIN_RESET);
+	printf("STM32_input_ack sent \n");
+}
+
+void send_STM32_output_ack()
+{
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_0, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_1, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_2, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_3, GPIO_PIN_RESET);
+	printf("STM32_output_ack sent \n");
 }
 
 /*void send_STM32_L2_request()
@@ -285,45 +305,116 @@ void send_verif_false()
 	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_3, GPIO_PIN_RESET);
 }
 
-void wait_for_ack_FPGA()
+
+void wait_for_FPGA_on_S0()
 {
 	int Mode[4]={0};
-	while(!((Mode[0] == 0) && (Mode[1] == 1) && (Mode[2] == 0) && (Mode[3] == 1)))
+	while(!((Mode[0] == 0) && (Mode[1] == 1) && (Mode[2] == 1) && (Mode[3] == 0)))
 	{
 		HAL_Delay(10);
 		Mode[0] = HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_0);
 		Mode[1] = HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_1);
 		Mode[2] = HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_2);
 		Mode[3] = HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_3);
-		printf("WaitAckFPGA Mode 0: %d\n",Mode[0]);
-		printf("WaitAckFPGA Mode 1: %d\n",Mode[1]);
-		printf("WaitAckFPGA Mode 2: %d\n",Mode[2]);
-		printf("WaitAckFPGA Mode 3: %d\n",Mode[3]);
 	}
-	//printf("Okkk\n");
+	printf("FPGA on S0 state \n");
 }
 
-void wait_for_req_FPGA()
+void wait_for_input_ack_FPGA()
+{
+	int Mode[4]={0};
+	while(!((Mode[0] == 1) && (Mode[1] == 1) && (Mode[2] == 1) && (Mode[3] == 0)))
+	{
+		HAL_Delay(10);
+		Mode[0] = HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_0);
+		Mode[1] = HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_1);
+		Mode[2] = HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_2);
+		Mode[3] = HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_3);
+	}
+	printf("input_ack_FPGA re�ut \n");
+}
+
+void wait_for_verif_input_req_FPGA()
 {
 	int Mode[4]={0};
 
-	while(!((Mode[0] == 0) && (Mode[1] == 1) && (Mode[2] == 0) && (Mode[3] == 0)))
+	while(!((Mode[0] == 0) && (Mode[1] == 0) && (Mode[2] == 0) && (Mode[3] == 1)))
 	{
 		HAL_Delay(10);
 		Mode[0]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_0);
 		Mode[1]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_1);
 		Mode[2]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_2);
 		Mode[3]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_3);
-		printf("WaitForReq Mode0: %d\n",Mode[0]);
-		printf("WaitForReq Mode1: %d\n",Mode[1]);
-		printf("WaitForReq Mode2: %d\n",Mode[2]);
-		printf("WaitForReq Mode3: %d\n",Mode[3]);
 	}
+	printf("verif_input_req_FPGA re�ut \n");
 }
+
+void wait_for_end_input_ack_FPGA()
+{
+	int Mode[4]={0};
+
+	while(!((Mode[0] == 0) && (Mode[1] == 1) && (Mode[2] == 0) && (Mode[3] == 1)))
+	{
+		HAL_Delay(10);
+		Mode[0]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_0);
+		Mode[1]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_1);
+		Mode[2]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_2);
+		Mode[3]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_3);
+	}
+	printf("end_input_ack_FPGA re�ut \n");
+}
+
+void wait_for_output_req_FPGA()
+{
+	int Mode[4]={0};
+
+	while(!((Mode[0] == 1) && (Mode[1] == 1) && (Mode[2] == 0) && (Mode[3] == 1)))
+	{
+		HAL_Delay(10);
+		Mode[0]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_0);
+		Mode[1]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_1);
+		Mode[2]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_2);
+		Mode[3]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_3);
+	}
+	printf("output_req_FPGA re�ut \n");
+}
+
+
+void wait_for_FPGA_verif()
+{
+	int Mode[4]={0};
+
+	while(!((Mode[0] == 0) && (Mode[1] == 0) && (Mode[2] == 1) && (Mode[3] == 1)))
+	{
+		HAL_Delay(10);
+		Mode[0]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_0);
+		Mode[1]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_1);
+		Mode[2]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_2);
+		Mode[3]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_3);
+	}
+	printf("FPGA verify sent data \n");
+}
+
+void wait_for_FPGA_end_cycle()
+{
+	int Mode[4]={0};
+
+	while(!((Mode[0] == 1) && (Mode[1] == 0) && (Mode[2] == 1) && (Mode[3] == 1)))
+	{
+		HAL_Delay(10);
+		Mode[0]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_0);
+		Mode[1]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_1);
+		Mode[2]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_2);
+		Mode[3]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_3);
+	}
+	printf("FPGA end cycle\n");
+}
+
 
 int FPGA_verification_result(){
 	int Mode[4]={0};
 	int result;
+
 	Mode[0]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_0);
 	Mode[1]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_1);
 	Mode[2]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_2);
@@ -363,7 +454,7 @@ void init_INPUT(float input[]){
 	int i=0;
 	float cpt = 0.1;
 	for (i=0;i<30;i++){
-		input[i] = 0.5;
+		input[i] = 0.5; 
 		cpt = cpt + 0.1;
 	}
 }
