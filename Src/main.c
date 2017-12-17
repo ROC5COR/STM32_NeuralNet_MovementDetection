@@ -53,8 +53,8 @@
 #define INPUT_SIZE 30
 #define OUTPUT_SIZE 4
 #define INPUT_SIZE_FILTER 150
-#define NB_EPOCHS 500
-#define HIDDEN_NEURON 10
+#define NB_EPOCHS 300
+#define HIDDEN_NEURON 30
 #define CIRCLE_SAMPLES 40
 #define SQUARE_SAMPLES 40
 #define TRIANGLE_SAMPLES 40
@@ -588,6 +588,8 @@ void testAllData(){
 	    //printMatrix(syn2, "SYN2 : ");
 }
 
+
+
 void generateMif(){
 	limitMatrix(syn1,syn1);
 	    limitMatrix(syn2,syn2);
@@ -660,6 +662,34 @@ void generateMif(){
 	     printf("End\n");
 }
 
+
+int getShape(){
+
+	  if(((float**)l2->mat)[0][3] > ((float**)l2->mat)[0][0] &&
+		  ((float**)l2->mat)[0][3] > ((float**)l2->mat)[0][1] &&
+		  ((float**)l2->mat)[0][3] > ((float**)l2->mat)[0][2]){
+		return 1;
+	  }
+
+
+	  if(((float**)l2->mat)[0][2] > ((float**)l2->mat)[0][0] &&
+			((float**)l2->mat)[0][2] > ((float**)l2->mat)[0][1] &&
+			((float**)l2->mat)[0][2] > ((float**)l2->mat)[0][3]){
+		  return 2;
+	  }
+		if(((float**)l2->mat)[0][1] > ((float**)l2->mat)[0][0] &&
+			  ((float**)l2->mat)[0][1] > ((float**)l2->mat)[0][2] &&
+			  ((float**)l2->mat)[0][1] > ((float**)l2->mat)[0][3]){
+			return 3;
+		  }
+
+		if(((float**)l2->mat)[0][0] > ((float**)l2->mat)[0][1] &&
+			  ((float**)l2->mat)[0][0] > ((float**)l2->mat)[0][2] &&
+			  ((float**)l2->mat)[0][0] > ((float**)l2->mat)[0][3]){
+			return 4;
+		  }
+		return 0;
+}
 
 void fillTrainingDataShape(){
 #ifdef TRAINING
@@ -801,15 +831,15 @@ int main(void)
 
     for(int i = 0; i < INPUT_SIZE; i = i + 2){
     	printf("Iteration no %d\n",i);
-    	setDataOnPort(normalize(circle[i][30]));
+    	printf("valeur non nor %f",square[30][i]);
+    	setDataOnPort(normalize(square[30][i]));
     	setMode1OnPort();
     	waitForMode1OnPort();
-    	HAL_Delay(1000);
     	printf("Iteration no %d\n",i+1);
-		setDataOnPort(normalize(circle[i+1][30]));
+    	printf("valeur non nor %f",square[30][i+1]);
+		setDataOnPort(normalize(square[30][i+1]));
 		setMode2OnPort();
 		waitForMode2OnPort();
-		HAL_Delay(1000);
     }
 
     printf("Communication Ended !\n");
