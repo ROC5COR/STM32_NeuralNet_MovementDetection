@@ -1,38 +1,6 @@
 #include "ai_tools.h"
 #include <math.h>
 
-/*void matrixProduct_8(uint8_t **mat1, uint8_t **mat2, uint8_t **matOut, int sizeMat1_x, int sizeMat1_y, int sizeMat2_x, int sizeMat2_y){
-    if(sizeMat1_x != sizeMat2_y){
-        matOut = NULL;
-        return;
-    }
-
-    int i,j,k;
-    for(i = 0; i < sizeMat1_y; i++){
-        for(j = 0; j < sizeMat2_x; j++){
-            matOut[i][j] = 0;
-            for(k = 0; k < sizeMat2_y; k++){
-                matOut[i][j] += mat1[i][k] * mat2[k][j];
-            }
-        }
-    }
-}*/
-/*void matrixProduct_32(uint32_t **mat1, uint32_t **mat2, uint32_t **matOut, int sizeMat1_x, int sizeMat1_y, int sizeMat2_x, int sizeMat2_y){
-    if(sizeMat1_x != sizeMat2_y){
-        matOut = NULL;
-        return;
-    }
-
-    int i,j,k;
-    for(i = 0; i < sizeMat1_y; i++){
-        for(j = 0; j < sizeMat2_x; j++){
-            matOut[i][j] = 0;
-            for(k = 0; k < sizeMat2_y; k++){
-                matOut[i][j] += mat1[i][k] * mat2[k][j];
-            }
-        }
-    }
-}*/
 
 void matrixProduct_float(MAT *mat1, MAT *mat2, MAT *matOut){
     if(mat1->matN != mat2->matM){
@@ -52,37 +20,6 @@ void matrixProduct_float(MAT *mat1, MAT *mat2, MAT *matOut){
     }
 }
 
-/*uint8_t** createMatrix_8(int size_x, int size_y){
-    uint8_t **out = NULL;
-    out = (uint8_t**)malloc(sizeof(uint8_t*)*size_x);
-    if(out == NULL){
-        return NULL;
-    }
-    int i;
-    for(i = 0; i < size_y; i++){
-        out[i] = (uint8_t*)malloc(sizeof(uint8_t)*size_y);
-        if(out[i] == NULL){
-            return NULL;
-        }
-    }
-    return out;
-}*/
-
-/*uint32_t** createMatrix_32(int size_x, int size_y){
-    uint32_t **out = NULL;
-    out = (uint32_t**)malloc(sizeof(uint32_t*)*size_x);
-    if(out == NULL){
-        return NULL;
-    }
-    int i;
-    for(i = 0; i < size_y; i++){
-        out[i] = (uint32_t*)malloc(sizeof(uint32_t)*size_y);
-        if(out[i] == NULL){
-            return NULL;
-        }
-    }
-    return out;
-}*/
 
 MAT* createMatrix_float(uint16_t m, uint16_t n){
     MAT *out = (MAT*)malloc(sizeof(MAT));
@@ -113,42 +50,6 @@ MAT* createMatrix_float(uint16_t m, uint16_t n){
     return out;
 }
 
-/*void printMatrix_8(uint8_t **mat, int matX, int matY){
-    int i,j;
-    printf("[");
-    for(i = 0; i < matY; i++){
-        printf("[");
-        for(j = 0; j < matX; j++){
-            printf(" %d ",mat[i][j]);
-        }
-        printf("]\n");
-    }
-    printf("]\n\n");
-}*/
-
-/*void printMatrix_32(uint32_t **mat, int matX, int matY){
-    int i,j;
-    printf("{");
-    for(i = 0; i < matY; i++){
-        printf("{");
-        for(j = 0; j < matX; j++){
-        	if(j == matX -1){
-        		printf("%d",mat[i][j]);
-        	}
-        	else{
-        		printf("%d,",mat[i][j]);
-        	}
-        }
-        if(i == matY -1){
-        	printf("}}\n\n");
-        }
-        else{
-        	printf("},\n");
-        }
-
-    }
-    //printf("}\n\n");
-}*/
 
 void printMatrix_float(MAT *mat){
     int i,j;
@@ -177,51 +78,6 @@ void printMatrix(MAT *mat, char *name){
     printMatrix_float(mat);
 }
 
-/*void fillIncValues_8(uint8_t **mat, int size_x,int size_y){
-    int i,j;
-    uint8_t k = 1;
-    for(i = 0; i < size_y; i++){
-        for(j = 0; j < size_x; j++){
-            mat[i][j] = k;
-            k++;
-        }
-    }
-}
-
-void fillRandomValues_8(uint8_t **mat, int size_x,int size_y, int min, int max){
-    int i,j;
-    for(i = 0; i < size_y; i++){
-        for(j = 0; j < size_x; j++){
-            mat[i][j] = rand() % max-min  + min;
-        }
-    }
-}
-
-void fillRandomValues_32(uint32_t **mat, int size_x,int size_y, int min, int max){
-    int i,j;
-    for(i = 0; i < size_y; i++){
-        for(j = 0; j < size_x; j++){
-            mat[i][j] = rand() % max-min  + min;
-        }
-    }
-}*/
-
-/*void transposeMatrix_32(uint32_t **mat1, uint32_t**matOut, int mat1X, int mat1Y, int matOutX, int matOutY){
-	if(mat1 == matOut){
-		printf("Warning same matrix passed as parameter\n");
-	}
-	if(mat1X != matOutY || mat1Y != matOutX){
-		printf("Size error\n");
-		return;
-	}
-
-	int i,j;
-	for(i = 0; i < mat1Y; i++){
-		for(j = 0; j < mat1X; j++){
-			matOut[j][i] = mat1[i][j];
-		}
-	}
-}*/
 
 void transposeMatrix_float(MAT *mat1, MAT *matOut){
     if(mat1 == matOut){
@@ -377,4 +233,16 @@ uint16_t float_to_hexa(float input){
 	return total;
 }
 
+float normalize(float a){
+
+  float out = (a + (float)NORM_UP)/(float)NORM_DIVIDE;
+
+  if(out < 0){
+    out = 0;
+  }
+  if(out > 1){
+    out = 1;
+  }
+  return out;
+}
 

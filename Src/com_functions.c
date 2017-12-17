@@ -20,24 +20,25 @@ void init_com()
 	/*Initialisation des entr�es pour MODE*/
 	GPIO_InitTypeDef GPIO_InitStructureModeIn;
 
-	//__HAL_RCC_GPIOC_CLK_ENABLE();
-	GPIO_InitStructureModeIn.Pin = MODE_IN_0 | MODE_IN_1 | MODE_IN_2 | MODE_IN_3;
+	__HAL_RCC_GPIOC_CLK_ENABLE();
+	/*GPIO_InitStructureModeIn.Pin = MODE_IN_0 | MODE_IN_1 | MODE_IN_2 | MODE_IN_3;
 	GPIO_InitStructureModeIn.Mode = GPIO_MODE_INPUT;
 	GPIO_InitStructureModeIn.Pull = GPIO_PULLDOWN;
-	HAL_GPIO_Init(MODE_PORT, &GPIO_InitStructureModeIn);
+	HAL_GPIO_Init(MODE_PORT, &GPIO_InitStructureModeIn);*/
 
 	/*Initialisation des sorties pour MODE*/
 	GPIO_InitTypeDef GPIO_InitStructureModeOut;
 	//__HAL_RCC_GPIOC_CLK_ENABLE();
-	GPIO_InitStructureModeOut.Pin = MODE_OUT_0 | MODE_OUT_1 | MODE_OUT_2 | MODE_OUT_3 | DATA_OUT_2;
+	GPIO_InitStructureModeOut.Pin = MODE_OUT_0 | MODE_OUT_1 | MODE_OUT_2 | MODE_OUT_3;
 	GPIO_InitStructureModeOut.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStructureModeOut.Pull = GPIO_NOPULL;
+	//GPIO_InitStructureModeOut.Speed =  GPIO_SPEED_FAST;
 	HAL_GPIO_Init(MODE_PORT, &GPIO_InitStructureModeOut);
 
 	/*Initialisation des entr�es pour DATA*/
 	GPIO_InitTypeDef GPIO_InitStructureDataIn;
 	//__HAL_RCC_GPIOA_CLK_ENABLE();
-	GPIO_InitStructureDataIn.Pin = DATA_IN_0 | DATA_IN_1 | DATA_IN_2 | DATA_IN_3 | DATA_IN_4 | DATA_IN_5 | DATA_IN_6 | DATA_IN_7 | DATA_IN_8 | DATA_IN_9 | DATA_IN_10 | DATA_IN_11| DATA_IN_12 | DATA_IN_13 | DATA_IN_14 | DATA_IN_15;
+	GPIO_InitStructureDataIn.Pin = DATA_IN_0 | DATA_IN_1 | DATA_IN_2 | DATA_IN_3 | DATA_IN_4 | DATA_IN_5 | DATA_IN_6 | DATA_IN_7 | DATA_IN_8 | DATA_IN_9 | DATA_IN_10 | MODE_IN_0 | MODE_IN_1 | MODE_IN_2 | MODE_IN_3;
 	GPIO_InitStructureDataIn.Mode = GPIO_MODE_INPUT;
 	GPIO_InitStructureDataIn.Pull = GPIO_PULLDOWN;
 	HAL_GPIO_Init(DATA_IN_PORT, &GPIO_InitStructureDataIn);
@@ -47,7 +48,7 @@ void init_com()
 	//__HAL_RCC_GPIOB_CLK_ENABLE();
 
 	//GPIO_InitStructureDataOut.Pin = DATA_OUT_0 | DATA_OUT_1 | DATA_OUT_2 | DATA_OUT_3 | DATA_OUT_4 | DATA_OUT_5 | DATA_OUT_6 | DATA_OUT_7 | DATA_OUT_8 | DATA_OUT_9 | DATA_OUT_10 | DATA_OUT_11 | DATA_OUT_12 | DATA_OUT_13 | DATA_OUT_14 | DATA_OUT_15;
-	GPIO_InitStructureDataOut.Pin = DATA_OUT_0 | DATA_OUT_1 | DATA_OUT_3 | DATA_OUT_4 | DATA_OUT_5 | DATA_OUT_6  | DATA_OUT_7 | DATA_OUT_8 | DATA_OUT_9 | DATA_OUT_10 | DATA_OUT_11 | DATA_OUT_12 | DATA_OUT_13 | DATA_OUT_14 | DATA_OUT_15;
+	GPIO_InitStructureDataOut.Pin = DATA_OUT_0 | DATA_OUT_1 | DATA_OUT_2 | DATA_OUT_3 | DATA_OUT_4 | DATA_OUT_5 | DATA_OUT_6  | DATA_OUT_7 | DATA_OUT_8 | DATA_OUT_9;
 	GPIO_InitStructureDataOut.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStructureDataOut.Pull = GPIO_NOPULL;
 
@@ -55,6 +56,7 @@ void init_com()
 	printf("Init pin com : OK\n");
 
 }
+
 
 /**
  * @brief Envoi d'un element de INPUT au FPGA
@@ -78,9 +80,9 @@ void send_input_element(float layer_element)
 		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_1, GPIO_PIN_RESET);
 	}
 	if(Tab_bits[2]==1){
-		HAL_GPIO_WritePin(GPIOC, DATA_OUT_2, GPIO_PIN_SET);//Bug fix
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_2, GPIO_PIN_SET);
 	}else{
-		HAL_GPIO_WritePin(GPIOC, DATA_OUT_2, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_2, GPIO_PIN_RESET);
 	}
 	if(Tab_bits[3]==1){
 		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_3, GPIO_PIN_SET);
@@ -117,12 +119,12 @@ void send_input_element(float layer_element)
 	}else{
 		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_9, GPIO_PIN_RESET);
 	}
-	if(Tab_bits[10]==1){
+	/*if(Tab_bits[10]==1){
 		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_10, GPIO_PIN_SET);
 	}else{
 		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_10, GPIO_PIN_RESET);
 	}
-	/*if(Tab_bits[11]==1){
+	if(Tab_bits[11]==1){
 		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_11, GPIO_PIN_SET);
 	}else{
 		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_11, GPIO_PIN_RESET);
@@ -201,7 +203,7 @@ int verif_input_element(float input_element, float temp_fpga_element)
 
 void read_bits_input(float input, int Tab_bits[])
 {
-	printf("input = %f",input);
+	printf("input = %f\n",input);
 	if(input > 1){input = 1;}
 
 	if(input < 0){input = 0;}
@@ -213,7 +215,7 @@ void read_bits_input(float input, int Tab_bits[])
 		input = - input;
 	}*/
 	//uint16_t int_part = floor(input);
-	uint16_t frac_part = input*2047;
+	uint16_t frac_part = input*1023;
 	//printf("Conversion ent(hexa):%02x ; frac(hexa):%04x\n",int_part,frac_part);
 	//printf("Conversion ent(int):%u ; frac(int):%u\n",int_part,frac_part);
 
@@ -224,7 +226,7 @@ void read_bits_input(float input, int Tab_bits[])
 	printf("Variable sent on pins (hexa): %05x ; Total(int):%d\n",total,total);
 
 	int i=0;
-	for (i=0;i<11;i++){
+	for (i=0;i<10;i++){
 		//Tab_bits[i]=(layer_element & (1<<i)) >> i;
 		Tab_bits[i] = (total & (1<<i))>>i;
 	}
@@ -257,8 +259,8 @@ void send_STM32_start_request()
 void send_STM32_next_input_request()
 {
 	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_0, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_1, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_2, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_1, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_2, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_3, GPIO_PIN_RESET);
 	printf("STM32_next_input_request sent \n");
 }
@@ -330,8 +332,11 @@ void wait_for_input_ack_FPGA()
 		Mode[1] = HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_1);
 		Mode[2] = HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_2);
 		Mode[3] = HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_3);
+		for (int i=0; i<4;i++){
+			printf("Mode In %d : %d \n", i, Mode[i]);
+		}
 	}
-	printf("input_ack_FPGA re�ut \n");
+	printf("input_ack_FPGA recut \n");
 }
 
 void wait_for_verif_input_req_FPGA()
@@ -346,8 +351,89 @@ void wait_for_verif_input_req_FPGA()
 		Mode[2]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_2);
 		Mode[3]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_3);
 	}
-	printf("verif_input_req_FPGA re�ut \n");
+	printf("verif_input_req_FPGA recut \n");
 }
+
+void wait_all_mode_1()
+{
+	int Mode[4]={0};
+
+	while(!((Mode[0] == 1) && (Mode[1] == 1) && (Mode[2] == 1) && (Mode[3] == 1)))
+	{
+		HAL_Delay(10);
+		Mode[0]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_0);
+		Mode[1]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_1);
+		Mode[2]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_2);
+		Mode[3]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_3);
+	}
+
+}
+
+void show_fpga_mode()
+{
+	int mode[16]={0};
+	int prev_mode[16]={0};
+	int stateChanged = 0;
+	int mode_prec = 0;
+	int mode_current = 0;
+
+	int cpt = 0;
+
+	while(1)
+	{
+		while(stateChanged == 0){
+			mode[0]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_0);
+			mode[1]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_1);
+			mode[2]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_2);
+			mode[3]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_3);
+			mode[4]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_4);
+			mode[5]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_5);
+			mode[6]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_6);
+			mode[7]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_7);
+			mode[8]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_8);
+			mode[9]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_9);
+			mode[10]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_10);
+			//mode[11]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_11);
+			//mode[12]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_12);
+			//mode[13]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_13);
+			//mode[14]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_14);
+			//mode[15]=HAL_GPIO_ReadPin(DATA_IN_PORT, DATA_IN_15);
+			/*for(int i = 0; i < 16; i++){
+				if(mode[i] != prev_mode[i]){
+					stateChanged = 1;
+				}
+			}*/
+			mode_current = HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_TEST);
+			if(mode_current != mode_prec){
+				stateChanged = 1;
+
+			}
+			/*if(mode[0] != prev_mode[0] || mode[1] != prev_mode[1] || mode[2] != prev_mode[2] || mode[3] != prev_mode[3]){
+				stateChanged = 1;
+			}*/
+			/*for(int i = 0; i < 16; i++){
+				prev_mode[i] = mode[i];
+			}*/
+			mode_prec = mode_current;
+		}
+		stateChanged = 0;
+		printf("(%d) : ",cpt);
+		for(int i = 15; i >= 0; i--){
+			printf("%d",mode[i]);
+		}
+		printf("\n");
+		cpt++;
+		//HAL_Delay(10);
+
+		//Mode[0]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_0);
+		//Mode[1]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_1);
+		//Mode[2]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_2);
+		//Mode[3]=HAL_GPIO_ReadPin(MODE_PORT, MODE_IN_3);
+	}
+}
+
+
+
 
 void wait_for_end_input_ack_FPGA()
 {
@@ -427,7 +513,57 @@ int FPGA_verification_result(){
 	return result;
 }
 
+void testDataOut(){
+	for(int i = 0; i < 8; i++){
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_0, GPIO_PIN_SET);
+		HAL_Delay(1000);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_0, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_1, GPIO_PIN_SET);
+		HAL_Delay(1000);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_1, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_2, GPIO_PIN_SET);
+		HAL_Delay(1000);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_2, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_3, GPIO_PIN_SET);
+		HAL_Delay(1000);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_3, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_4, GPIO_PIN_SET);
+		HAL_Delay(1000);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_4, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_5, GPIO_PIN_SET);
+		HAL_Delay(1000);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_5, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_6, GPIO_PIN_SET);
+		HAL_Delay(1000);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_6, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_7, GPIO_PIN_SET);
+		HAL_Delay(1000);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_7, GPIO_PIN_RESET);
 
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_8, GPIO_PIN_SET);
+		HAL_Delay(1000);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_8, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_9, GPIO_PIN_SET);
+		HAL_Delay(1000);
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_9, GPIO_PIN_RESET);
+
+		//TEST MODE
+		HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_0, GPIO_PIN_SET);
+		HAL_Delay(1000);
+		HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_0, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_1, GPIO_PIN_SET);
+		HAL_Delay(1000);
+		HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_1, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_2, GPIO_PIN_SET);
+		HAL_Delay(1000);
+		HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_2, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_3, GPIO_PIN_SET);
+		HAL_Delay(1000);
+		HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_3, GPIO_PIN_RESET);
+
+	}
+
+}
 
 void reset_all_Data_outputs()
 {
@@ -441,12 +577,12 @@ void reset_all_Data_outputs()
 	HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_7, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_8, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_9, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_10, GPIO_PIN_RESET);
+	/*AL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_10, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_11, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_12, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_13, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_14, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_15, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_15, GPIO_PIN_RESET);*/
 
 }
 
@@ -458,3 +594,147 @@ void init_INPUT(float input[]){
 		cpt = cpt + 0.1;
 	}
 }
+
+void setDataOnPort(float n){
+	int Tab_bits[10];
+
+	read_bits_input(n, Tab_bits);
+
+
+	if(Tab_bits[0]==1){
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_0, GPIO_PIN_SET);
+	}else{
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_0, GPIO_PIN_RESET);
+	}
+	if(Tab_bits[1]==1){
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_1, GPIO_PIN_SET);
+	}else{
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_1, GPIO_PIN_RESET);
+	}
+	if(Tab_bits[2]==1){
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_2, GPIO_PIN_SET);
+	}else{
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_2, GPIO_PIN_RESET);
+	}
+	if(Tab_bits[3]==1){
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_3, GPIO_PIN_SET);
+	}else{
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_3, GPIO_PIN_RESET);
+	}
+	if(Tab_bits[4]==1){
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_4, GPIO_PIN_SET);
+	}else{
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_4, GPIO_PIN_RESET);
+	}
+	if(Tab_bits[5]==1){
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_5, GPIO_PIN_SET);
+	}else{
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_5, GPIO_PIN_RESET);
+	}
+	if(Tab_bits[6]==1){
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_6, GPIO_PIN_SET);
+	}else{
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_6, GPIO_PIN_RESET);
+	}
+	if(Tab_bits[7]==1){
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_7, GPIO_PIN_SET);
+	}else{
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_7, GPIO_PIN_RESET);
+	}
+	if(Tab_bits[8]==1){
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_8, GPIO_PIN_SET);
+	}else{
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_8, GPIO_PIN_RESET);
+	}
+	if(Tab_bits[9]==1){
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_9, GPIO_PIN_SET);
+	}else{
+		HAL_GPIO_WritePin(DATA_OUT_PORT, DATA_OUT_9, GPIO_PIN_RESET);
+	}
+
+
+	for(int i = 0; i < 10; i++){
+		printf("(%d) : %d\n",i,Tab_bits[i]);
+	}
+	printf("\n");
+}
+
+void setMode0OnPort(){
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_0, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_1, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_2, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_3, GPIO_PIN_RESET);
+}
+
+void setMode3OnPort(){
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_2, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_1, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_2, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_0, GPIO_PIN_RESET);
+}
+
+void setMode1OnPort(){
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_0, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_1, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_2, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_3, GPIO_PIN_RESET);
+}
+
+void setMode2OnPort(){
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_1, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_0, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_2, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_3, GPIO_PIN_RESET);
+}
+
+void setModeResetOnPort(){
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_3, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_0, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_1, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(MODE_PORT, MODE_OUT_2, GPIO_PIN_RESET);
+}
+
+void waitForMode1OnPort(){
+	int data[4] = {0};
+
+	while(!(data[0] == 1 && data[1] == 0 && data[2] == 0 && data[3] == 0)){
+		data[0] = HAL_GPIO_ReadPin(DATA_IN_PORT, MODE_IN_0);
+		data[1] = HAL_GPIO_ReadPin(DATA_IN_PORT, MODE_IN_1);
+		data[2] = HAL_GPIO_ReadPin(DATA_IN_PORT, MODE_IN_2);
+		data[3] = HAL_GPIO_ReadPin(DATA_IN_PORT, MODE_IN_3);
+		printf("%d",data[3]);
+		printf("%d",data[2]);
+		printf("%d",data[1]);
+		printf("%d",data[0]);
+		printf("\n");
+		HAL_Delay(1000);
+	}
+	printf("%d",data[3]);
+	printf("%d",data[2]);
+	printf("%d",data[1]);
+	printf("%d",data[0]);
+	printf("\n");
+}
+
+void waitForMode2OnPort(){
+	int data[4] = {0};
+
+	while(!(data[0] == 0 && data[1] == 1 && data[2] == 0 && data[3] == 0)){
+		data[0] = HAL_GPIO_ReadPin(DATA_IN_PORT, MODE_IN_0);
+		data[1] = HAL_GPIO_ReadPin(DATA_IN_PORT, MODE_IN_1);
+		data[2] = HAL_GPIO_ReadPin(DATA_IN_PORT, MODE_IN_2);
+		data[3] = HAL_GPIO_ReadPin(DATA_IN_PORT, MODE_IN_3);
+		printf("%d",data[3]);
+		printf("%d",data[2]);
+		printf("%d",data[1]);
+		printf("%d",data[0]);
+		printf("\n");
+		HAL_Delay(1000);
+	}
+	printf("%d",data[3]);
+	printf("%d",data[2]);
+	printf("%d",data[1]);
+	printf("%d",data[0]);
+	printf("\n");
+}
+
