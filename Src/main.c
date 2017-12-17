@@ -560,7 +560,6 @@ void testAllData(){
 	          testCpt++;
 	    }
 	    printf("%d/%d success\n", successCpt, testCpt);
-	    freeTestingMatrix();
 
 	    printf("Synthesis : \n");
 	#ifdef TESTING
@@ -850,7 +849,7 @@ int main(void)
 
 #ifdef ACCELERO
 
-    initTestingMatrix();
+    //initTestingMatrix();
     ADXL345_Init(&ACCELERO_I2C);
     HAL_Delay(10);
     printf("Device ID : 0x%02x\n", getDeviceID(&ACCELERO_I2C));
@@ -912,10 +911,14 @@ while (1)
 #ifdef FILTER
     HAL_Delay(100);
     filter_acc();
+    performComputation();
+    printMatrix(l2,(char*)"Resultats : ");
+
 #endif
 
   }
   }
+freeTestingMatrix();
   /* USER CODE END 3 */
 
 }
@@ -1056,79 +1059,115 @@ static void MX_GPIO_Init(void)
 }
 // User Code
 void filter_acc(){
-    printf("Start\n");
-    //uint32_t i2c_startTime = HAL_GetTick();
-   // i2c_startTime = HAL_GetTick();
-    int i = 0;
-    int j = 0;
+	  printf("Start\n");
+	  //uint32_t i2c_startTime = HAL_GetTick();
+	 // i2c_startTime = HAL_GetTick();
+	  int i = 0;
+	  int j = 0;
+	  int k = 1;
 
-    int16_t i2c_data[3] = {0, 0,0};
-    int16_t i2c_data_temp[3] ={0,0,0};
+	  int16_t i2c_data[3] = {0, 0,0};
+	  int16_t i2c_data_temp[3] ={0,0,0};
 
-    int16_t i2c_data_filter[1][INPUT_SIZE_FILTER*2];
-    int16_t i2c_data_pre_filter[1][INPUT_SIZE_FILTER*2];
-    int16_t i2c_data_output[1][INPUT_SIZE_FILTER*2];
+	  float i2c_data_filter[1][INPUT_SIZE_FILTER*2];
+	  float i2c_data_pre_output[1][INPUT_SIZE_FILTER*2];
+	  float i2c_data_output[1][INPUT_SIZE_FILTER*2];
+	  float i2c_data_testing[1][INPUT_SIZE];
 
-    while(i<INPUT_SIZE_FILTER){
-      while (j<30){
-        getOutput(&ACCELERO_I2C,i2c_data);
-        i2c_data_temp[0]+=i2c_data[0];
-        i2c_data_temp[1]+=i2c_data[1];
-        j++;
+	  while(i<INPUT_SIZE_FILTER){
+		  while (j<30){
+			  getOutput(&ACCELERO_I2C,i2c_data);
+			  i2c_data_temp[0]+=i2c_data[0];
+			  i2c_data_temp[1]+=i2c_data[1];
+			  j++;
 
-      }
+		  }
 
-      i2c_data_filter[0][2*i] = i2c_data_temp[0]/30.0;
-      i2c_data_filter[0][1+2*i] = i2c_data_temp[1]/30.0;
+		  i2c_data_filter[0][2*i] = (float)i2c_data_temp[0]/30.0;
+		  i2c_data_filter[0][1+2*i] = (float)i2c_data_temp[1]/30.0;
 
-      //printf("X:%d, Y:%d\n",i2c_data_filter[0][2*i],i2c_data_filter[0][1+2*i]);
-      //((float**)input->mat)[0][2+3*i] =  ((float**)input->mat)[0][2+3*i]/10;
-      i++;
-      j=0;
-      i2c_data_temp[0]=0;
-      i2c_data_temp[1]=0;
-      HAL_Delay(10);
+		  //printf("X:%d, Y:%d\n",i2c_data_filter[0][2*i],i2c_data_filter[0][1+2*i]);
+		  //((float**)input->mat)[0][2+3*i] =  ((float**)input->mat)[0][2+3*i]/10;
+		  i++;
+		  j=0;
+		  i2c_data_temp[0]=0;
+		  i2c_data_temp[1]=0;
+		  HAL_Delay(10);
 
-    }
-     // printf("Fin acquisition\n");
-     // printf("delai : %u\n",HAL_GetTick() - i2c_startTime);
-      //printMatrix(input_pre_filter,(char*)"pre_filtre");
-    i2c_data_pre_filter[0][0]=i2c_data_filter[0][0];
-    i2c_data_pre_filter[0][1]=i2c_data_filter[0][1];
-    i2c_data_output[0][0]=i2c_data_filter[0][0];
-    i2c_data_output[0][1]=i2c_data_filter[0][1];
+	  }
+	   // printf("Fin acquisition\n");
+	   // printf("delai : %u\n",HAL_GetTick() - i2c_startTime);
+	  //printMatrix(input_pre_filter,(char*)"pre_filtre");
+      //i2c_data_pre_filter[0][0]=i2c_data_filter[0][0];
+      //i2c_data_pre_filter[0][1]=i2c_data_filter[0][1];
+		i2c_data_output[0][0]=i2c_data_filter[0][0];
+		i2c_data_output[0][1]=i2c_data_filter[0][1];
 
-    //printf("suppression offset\n");
-    //((float**)input->mat)[0][0]=0;
-    //((float**)input->mat)[0][1]=0;
-    ((float**)input_filter->mat)[0][0]=0;
-    ((float**)input_filter->mat)[0][1]=0;
+		i2c_data_pre_output[0][0]=i2c_data_filter[0][0];
+		i2c_data_pre_output[0][1]=i2c_data_filter[0][1];
 
-    //printf("Data\n");
-    printf("%f\n",((float**)input_filter->mat)[0][0]);
-    printf("%f\n",((float**)input_filter->mat)[0][1]);
+		i2c_data_testing[0][0]=i2c_data_filter[0][0];
+		i2c_data_testing[0][1]=i2c_data_filter[0][1];
 
-    for(i=1;i<INPUT_SIZE_FILTER;i++){
+		((float**)input->mat)[0][0]=normalize(i2c_data_testing[0][0]);
+		((float**)input->mat)[0][1]=normalize(i2c_data_testing[0][1]);
 
-//      i2c_data_pre_filter[0][2*i]=i2c_data_filter[0][2*i]*0.1+i2c_data_pre_filter[0][2*(i-1)]*0.9;
-//      i2c_data_pre_filter[0][1+2*i]=i2c_data_filter[0][1+2*i]*0.1+i2c_data_pre_filter[0][1+2*(i-1)]*0.9;
+		//printf("suppression offset\n");
+		//((float**)input->mat)[0][0]=0;
+		//((float**)input->mat)[0][1]=0;
+//		((float**)input_filter->mat)[0][0]=i2c_data_filter[0][0];
+//		((float**)input_filter->mat)[0][1]=i2c_data_filter[0][1];
+
+		//printf("Data\n");
+//		printf("%f\n",((float**)input_filter->mat)[0][0]);
+//		printf("%f\n",((float**)input_filter->mat)[0][1]);
+		printf("%f\n",i2c_data_output[0][0]);
+		printf("%f\n",i2c_data_output[0][1]);
+
+		for(i=1;i<INPUT_SIZE_FILTER;i++){
+
+
+//		  i2c_data_pre_filter[0][2*i]=i2c_data_filter[0][2*i]*0.1+i2c_data_pre_filter[0][2*(i-1)]*0.9;
+//		  i2c_data_pre_filter[0][1+2*i]=i2c_data_filter[0][1+2*i]*0.1+i2c_data_pre_filter[0][1+2*(i-1)]*0.9;
 //
-//      i2c_data_output[0][2*i]=i2c_data_filter[0][2*i]-i2c_data_pre_filter[0][2*i];
-//      i2c_data_output[0][1+2*i]=i2c_data_filter[0][1+2*i]-i2c_data_pre_filter[0][1+2*i];
+//		  i2c_data_output[0][2*i]=i2c_data_filter[0][2*i]-i2c_data_pre_filter[0][2*i];
+//		  i2c_data_output[0][1+2*i]=i2c_data_filter[0][1+2*i]-i2c_data_pre_filter[0][1+2*i];
 
-      i2c_data_output[0][2*i]=i2c_data_filter[0][2*i]*0.1+i2c_data_output[0][2*(i-1)]*0.9;
-      i2c_data_output[0][1+2*i]=i2c_data_filter[0][1+2*i]*0.1+i2c_data_output[0][1+2*(i-1)]*0.9;
+			i2c_data_pre_output[0][2*i]=i2c_data_filter[0][2*i]*0.1+i2c_data_pre_output[0][2*(i-1)]*0.9;
+			i2c_data_pre_output[0][1+2*i]=i2c_data_filter[0][1+2*i]*0.1+i2c_data_pre_output[0][1+2*(i-1)]*0.9;
+
+			i2c_data_output[0][2*i]=i2c_data_pre_output[0][2*i]*0.1+i2c_data_output[0][2*(i-1)]*0.9;
+			i2c_data_output[0][1+2*i]=i2c_data_pre_output[0][1+2*i]*0.1+i2c_data_output[0][1+2*(i-1)]*0.9;
+
+			if(i%10==0){
+				i2c_data_testing[0][2*k]=i2c_data_output[0][2*i];
+				i2c_data_testing[0][1+2*k]=i2c_data_output[0][1+2*i];
+
+				((float**)input->mat)[0][2*k]=normalize(i2c_data_testing[0][2*k]);
+				((float**)input->mat)[0][2*k+1]=normalize(i2c_data_testing[0][1+2*k]);
+
+//				printf("\n%d\n",i2c_data_testing[0][2*k]);
+//				printf("%d\n\n",i2c_data_testing[0][1+2*k]);
+//				printf("\n\n%d\n\n",k);
+//				printf("\n\n%d\n\n",i);
+				k++;
+
+			}
+
+//		  ((float**)input_filter->mat)[0][2*i]=i2c_data_output[0][2*i];
+//		  ((float**)input_filter->mat)[0][2*i+1]=i2c_data_output[0][1+2*i];
+
+		  //printf("Data\n");
+//		  printf("%f\n",((float**)input_filter->mat)[0][2*i]);
+//		  printf("%f\n",((float**)input_filter->mat)[0][1+2*i]);
+		  printf("%f\n",i2c_data_output[0][2*i]);
+		  printf("%f\n",i2c_data_output[0][1+2*i]);
 
 
-      ((float**)input_filter->mat)[0][2*i]=i2c_data_output[0][2*i];
-      ((float**)input_filter->mat)[0][2*i+1]=i2c_data_output[0][1+2*i];
 
-      //printf("Data\n");
-      printf("%f\n",((float**)input_filter->mat)[0][2*i]);
-      printf("%f\n",((float**)input_filter->mat)[0][1+2*i]);
+	  }
 
-
-    }
+			printMatrix(input,(char*)"input : ");
 
 }
 
