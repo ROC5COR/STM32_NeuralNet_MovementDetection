@@ -1,5 +1,5 @@
 # STM32_NeuralNet_MovementDetection
-Innovative project over neural networks and embedded systems. Check the report if you want to get extra informations and more precision about the results of this project. 
+Innovative project over neural networks and embedded systems. Check the [report](Rapport_PX504_BarriereCanetLeDongeMoriceau.docx.pdf) if you want to get extra informations and more precision about the results of this project. 
 
 # Overview
 This project aims at creating a Neural Network for STM32(L476RG) to do motion recognition with data from accelerometer. The neural net used is a multilayer perceptron and it has (currently) 3 layers. 
@@ -8,6 +8,7 @@ The goals are :
 - To train the neural network on the stm32 itself
 - To perform the testing algorithm on an FPGA to increase speed
 - To compare performances between the stm32 alone and the stm32 with the fpga
+- [Check the report](Rapport_PX504_BarriereCanetLeDongeMoriceau.docx.pdf)
 
 # Requirements
 * STM32CubeMX : to edit project configuration (clock, gpios...)
